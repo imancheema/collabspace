@@ -10,7 +10,39 @@ const pool = new Pool({
     "postgres://postgres:postgres@db:5432/collabspace",
 });
 
-// testing db connection
+// create a new group
+app.post("/groups", async (req, res) => {
+  const { name, description, userId } = req.body;
+
+  if (!name || !userId) {
+    return res.status(400).json({ error: "Name and userId are required" });
+  }
+
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  try {
+    // insert task into PostgreSQL (STUDY_GROUPS table) + return row just inserted
+    const groupResult = await pool.query(
+      "INSERT INTO STUDY_GROUPS (NAME, DESCRIPTION, CODE) VALUES ($1, $2, $3) RETURNING *",
+      [name, description, code]
+    );
+    const group = groupResult.rows[0];
+
+    await pool.query(
+      "INSERT INTO USER_GROUPS (USER_ID, GROUP_ID, ROLE) VALUES ($1, $2, $3)",
+      [userId, group.id, "admin"]
+    );
+    res.status(201).json({
+      message: "Group created successfully",
+      group,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//testing db connection
 app.get("/", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
