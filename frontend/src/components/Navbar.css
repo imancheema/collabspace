@@ -1,0 +1,29 @@
+.navbar {
+  background-color: var(--black);
+  font-family: "Josefin Sans", sans-serif;
+  color: rgb(255, 255, 255);
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+}
+
+.navbar-title {
+  margin: 15px;
+  font-size: 2.3rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.navbar-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin-top: 0.25rem;
+  text-align: center;
+}
+
+.highlight {
+  color: var(--secondary-color);
+  font-weight: 600;
+}
