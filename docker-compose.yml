@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Backend.Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/collabspace
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Frontend.Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: collabspace
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d collabspace"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
