@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import CreateGroupPopup from "./CreateGroupPopup";
+import JoinGroupPopup from "./JoinGroupPopup";
 import "./Sidebar.css";
 
 const Sidebar: React.FC = () => {
   const [showCreatePopup, setShowCreatePopup] = useState(false);
+  const [showJoinPopup, setShowJoinPopup] = useState(false);
 
   return (
     <>
@@ -18,7 +20,12 @@ const Sidebar: React.FC = () => {
           >
             Create
           </button>
-          <button className="sidebar-btn">Join</button>
+          <button
+            className="sidebar-btn"
+            onClick={() => setShowJoinPopup(true)}
+          >
+            Join
+          </button>
         </div>
 
         <div className="sidebar-course">
@@ -27,6 +34,10 @@ const Sidebar: React.FC = () => {
       </aside>
       {showCreatePopup && (
         <CreateGroupPopup onClose={() => setShowCreatePopup(false)} />
+      )}
+
+      {showJoinPopup && (
+        <JoinGroupPopup onClose={() => setShowJoinPopup(false)} />
       )}
     </>
   );
