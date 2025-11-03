@@ -3,9 +3,19 @@ import "./CreateGroupPopup.css";
 
 interface CreateGroupPopupProps {
   onClose: () => void;
+  onGroupCreated: (group: {
+    name: string;
+    description: string;
+    code: string;
+  }) => void;
 }
 
-const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({ onClose }) => {
+const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({
+  onClose,
+  onGroupCreated,
+}) => {
+  const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
   const [groupCode, setGroupCode] = useState("");
 
   const generateCode = () => {
@@ -13,18 +23,61 @@ const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({ onClose }) => {
     setGroupCode(code);
   };
 
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groupName || !groupCode) return;
+
+    try {
+      const response = await fetch("http://localhost:5000/groups/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: groupName,
+          description: groupDescription,
+          code: groupCode,
+          userId: 1, // need to get from login state later
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to create group:", data.error);
+        return;
+      }
+
+      onGroupCreated({
+        name: groupName,
+        description: groupDescription,
+        code: groupCode,
+      });
+      onClose();
+    } catch (err) {
+      console.error("Network or server error:", err);
+    }
+  };
+
   return (
     <div className="popup-overlay">
       <div className="popup-content">
         <h2>Create New Group</h2>
-        <form>
+        <form onSubmit={handleCreate}>
           <label>
             Group Name:
-            <input type="text" placeholder="Enter group name" />
+            <input
+              type="text"
+              placeholder="Enter group name"
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+            />
           </label>
           <label>
             Description:
-            <textarea placeholder="Enter group description" />
+            <textarea
+              placeholder="Enter group description"
+              value={groupDescription}
+              onChange={(e) => setGroupDescription(e.target.value)}
+            />
           </label>
           <button
             type="button"
