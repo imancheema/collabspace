@@ -1,7 +1,9 @@
 const express = require("express");
 const { Pool } = require("pg");
+const cors = require("cors");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
@@ -11,14 +13,12 @@ const pool = new Pool({
 });
 
 // create a new group
-app.post("/groups", async (req, res) => {
-  const { name, description, userId } = req.body;
+app.post("/groups/create", async (req, res) => {
+  const { name, description, userId, code } = req.body;
 
   if (!name || !userId) {
     return res.status(400).json({ error: "Name and userId are required" });
   }
-
-  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   try {
     // insert task into PostgreSQL (STUDY_GROUPS table) + return row just inserted
