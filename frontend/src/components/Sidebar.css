@@ -36,9 +36,30 @@
   align-self: center;
   width: fit-content;
   font-family: "Josefin Sans", sans-serif;
+  margin-bottom: 15px;
 }
 
 .sidebar-btn:hover {
   background-color: var(--secondary-color);
   transform: scale(1.02);
+}
+
+.course-card {
+  background-color: #adecb2;
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.course-card:hover {
+  background-color: #97de9d;
+}
+
+.course-empty {
+  color: #999;
+  font-style: italic;
+  font-size: 16px;
 }
