@@ -12,6 +12,7 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-layout">
         <Sidebar onSelectGroup={setSelectedGroup} />
         <main className="dashboard-main">
+          <h2>Dashboard</h2>
           {selectedGroup ? (
             <div className="group-detail">
               <h2>{selectedGroup.name}</h2>
