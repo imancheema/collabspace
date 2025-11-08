@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import History from '@tiptap/extension-history';
-import Underline from '@tiptap/extension-underline';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
+import { HocuspocusProvider } from '@hocuspocus/provider';
+import * as Y from 'yjs';
 import {
   FaBold,
   FaItalic,
@@ -18,8 +20,20 @@ import { PiListBulletsBold, PiListNumbersBold } from 'react-icons/pi';
 
 import './TextEditor.css';
 
+// TEMP - User Generator
+const userColors = ['#EC5E41', '#F29F05', '#F2CB05', '#8C41F0', '#04BF8A'];
+const userNames = ['Albedo', 'Venti', 'Alice', 'Durin', 'Mona'];
+const randomUser = {
+  name: userNames[Math.floor(Math.random() * userNames.length)],
+  color: userColors[Math.floor(Math.random() * userColors.length)],
+};
+
+interface ToolbarProps {
+  editor: Editor | null;
+}
+
 //Toolbar Component
-const Toolbar = ({ editor }: { editor: Editor | null }) => {
+const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   if (!editor) {
     return null;
   }
@@ -29,7 +43,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
       {/* Undo/Redo */}
       <button
         onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().undo()}
+        // disabled={!editor.can().undo()}
         className="toolbar-button"
         title="Undo"
       >
@@ -37,7 +51,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
       </button>
       <button
         onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().redo()}
+        // disabled={!editor.can().redo()}
         className="toolbar-button"
         title="Redo"
       >
@@ -131,32 +145,87 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
 
 //Main Editor Component
 export const TextEditor: React.FC = () => {
+  const [editorData, setEditorData] = useState<{
+    ydoc: Y.Doc;
+    provider: HocuspocusProvider;
+  } | null>(null);
+
+  //useEffect runs once on mount to create provider
+  useEffect(() => {
+    const doc = new Y.Doc();
+
+    //Initialize HocuspocusProvider
+    const provider = new HocuspocusProvider({
+      url: 'ws://localhost:5000', //server url
+      name: 'collabspace',        //room name
+      document: doc,
+    });
+
+    //WebSocket logging  
+    console.log("Hocuspocus Provider Initialized");
+
+    provider.on('status', (event: { status: string }) => { 
+      console.log('Provider Status:', event.status);
+    });
+
+    provider.on('synced', () => {
+      console.log('Provider Synced!');
+    });
+
+    provider.on('disconnect', (event: { code: number, reason: string }) => {
+      console.error('Provider Disconnected:', event.code, event.reason);
+    });
+
+    setEditorData({
+      ydoc: doc,
+      provider: provider,
+    });
+
+    //Cleanup function for this useEffect
+    return () => {
+      provider.destroy();
+      doc.destroy();
+    };
+  }, []);
+
+
+  //useEditor hook with tiptap config
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [1, 2, 3],  
+          levels: [1, 2, 3],
         },
+        // history: false,
         undoRedo: false,
       }),
       Placeholder.configure({
         placeholder: 'Start writing your document...',
       }),
-      History.configure({
-        depth: 100, //Number of undo steps in history
-      }),
-      Underline,
+      //Configure Collaboration when editorData ready
+      ...(editorData ? [
+          Collaboration.configure({
+            document: editorData.ydoc,
+            field: 'default',
+          }),
+          CollaborationCaret.configure({
+            provider: editorData.provider,
+            user: randomUser,
+          }),
+        ] : []),
     ],
-    //Default content
-    content: `
-      <h1>My Document Title</h1>
-      <p>This is the first paragraph. Start typing here!</p>
-    `,
-  });
+  }, [editorData]);
+
+  //loading state when editor or editorData not ready
+  if (!editor || !editorData) {
+    return <div>Loading editor...</div>;
+  }
 
   return (
     <div className="editor-container">
-      <Toolbar editor={editor} />
+      <Toolbar
+        editor={editor}
+      />
       <div className="editor-content-wrapper">
         <EditorContent editor={editor} className="editor-page" />
       </div>

@@ -1,6 +1,9 @@
 const express = require("express");
 const { Pool } = require("pg");
 const cors = require("cors");
+//Collaboration websockets
+const { Server } = require("@hocuspocus/server");
+// const { TiptapTransformer } = require('@hocuspocus/transformer');
 
 const app = express();
 app.use(cors());
@@ -96,6 +99,14 @@ app.get("/", async (req, res) => {
     res.status(500).send("Database connection error");
   }
 });
+
+//Collaboration WebSocket
+const hocuspocusServer = new Server({
+  name: "collabspace-server",
+  port: 5000, //Same port as api
+});
+
+hocuspocusServer.listen();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
