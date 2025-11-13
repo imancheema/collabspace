@@ -1,6 +1,8 @@
 const express = require("express");
 const { Pool } = require("pg");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(cors());
@@ -12,6 +14,61 @@ const pool = new Pool({
     "postgres://postgres:postgres@db:5432/collabspace",
 });
 
+// user login
+app.post("/auth/login", async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "Email and password are required" });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT id,
+             email,
+             password_hash
+      FROM users
+      WHERE email = $1
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return res
+        .status(401)
+        .json({ ok: false, error: "Invalid email or password" });
+    }
+
+    const user = rows[0];
+
+    // compare provided password with bcrypt hash from DB
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+      return res
+        .status(401)
+        .json({ ok: false, error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      { sub: user.id, email: user.email },
+      process.env.JWT_SECRET || "dev-secret-change-me",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      ok: true,
+      user: { id: user.id, email: user.email },
+      token,
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
 // create a new group
 app.post("/groups/create", async (req, res) => {
   const { name, description, userId, code } = req.body;
@@ -21,7 +78,7 @@ app.post("/groups/create", async (req, res) => {
   }
 
   try {
-    // insert task into PostgreSQL (STUDY_GROUPS table) + return row just inserted
+    // insert group into PostgreSQL (STUDY_GROUPS table) + return row just inserted
     const groupResult = await pool.query(
       "INSERT INTO STUDY_GROUPS (NAME, DESCRIPTION, CODE) VALUES ($1, $2, $3) RETURNING *",
       [name, description, code]
@@ -47,7 +104,9 @@ app.post("/groups/join", async (req, res) => {
   const { userId, groupCode } = req.body;
 
   if (!userId || !groupCode) {
-    return res.status(400).json({ error: "userId and groupCode are required" });
+    return res
+      .status(400)
+      .json({ error: "userId and groupCode are required" });
   }
 
   try {
@@ -61,7 +120,7 @@ app.post("/groups/join", async (req, res) => {
     }
     const group = groupResult.rows[0];
 
-    // check if users already in a group
+    // check if user is already in the group
     const userGroupResult = await pool.query(
       "SELECT * FROM USER_GROUPS WHERE USER_ID = $1 AND GROUP_ID = $2",
       [userId, group.id]
@@ -86,7 +145,7 @@ app.post("/groups/join", async (req, res) => {
   }
 });
 
-//testing db connection
+// testing db connection
 app.get("/", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");

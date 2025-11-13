@@ -1,12 +1,16 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./screens/Dashboard";
+import Login from "./screens/Login";
+import ResourcePage from "./screens/ResourcePage";
 import "./App.css";
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/resources" element={<ResourcePage />} />
         <Route path="/" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
