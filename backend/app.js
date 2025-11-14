@@ -14,6 +14,7 @@ const pool = new Pool({
     "postgres://postgres:postgres@db:5432/collabspace",
 });
 
+// user register
 app.post("/auth/register", async (req, res) => {
   const { name, email, password } = req.body || {};
 
@@ -37,22 +38,19 @@ app.post("/auth/register", async (req, res) => {
   }
 
   try {
-    // hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // insert user
     const { rows } = await pool.query(
       `
       INSERT INTO users (name, email, password_hash)
       VALUES ($1, $2, $3)
-      RETURNING id, email
+      RETURNING id, name, email
       `,
       [name, email, passwordHash]
     );
 
     const user = rows[0];
 
-    // create JWT like in login
     const token = jwt.sign(
       { sub: user.id, email: user.email },
       process.env.JWT_SECRET || "dev-secret-change-me",
@@ -61,7 +59,11 @@ app.post("/auth/register", async (req, res) => {
 
     return res.status(201).json({
       ok: true,
-      user: { id: user.id, email: user.email },
+      user: {
+        id: user.id,
+        name: user.name,   
+        email: user.email,
+      },
       token,
     });
   } catch (err) {
@@ -76,6 +78,7 @@ app.post("/auth/register", async (req, res) => {
   }
 });
 
+
 // user login
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body || {};
@@ -89,6 +92,7 @@ app.post("/auth/login", async (req, res) => {
     const { rows } = await pool.query(
       `
       SELECT id,
+             name,
              email,
              password_hash
       FROM users
@@ -106,7 +110,6 @@ app.post("/auth/login", async (req, res) => {
 
     const user = rows[0];
 
-    // compare provided password with bcrypt hash from DB
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) {
       return res
@@ -122,7 +125,11 @@ app.post("/auth/login", async (req, res) => {
 
     res.json({
       ok: true,
-      user: { id: user.id, email: user.email },
+      user: {
+        id: user.id,
+        name: user.name,   
+        email: user.email,
+      },
       token,
     });
   } catch (err) {
