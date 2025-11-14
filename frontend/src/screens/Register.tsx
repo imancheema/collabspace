@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
-const Register: React.FC = () => {
+
+type RegisterProps = {
+  onRegister: () => void; 
+};
+
+const Register: React.FC<RegisterProps> = ({ onRegister }) => {
   const navigate = useNavigate();
 
   const [name, setName] = useState<string>("");
@@ -45,7 +50,7 @@ const Register: React.FC = () => {
       try {
         data = await resp.json();
       } catch {
-        // ignore
+        // ignore non-JSON
       }
 
       if (!resp.ok || data?.ok === false) {
@@ -61,8 +66,9 @@ const Register: React.FC = () => {
       if (data?.token) localStorage.setItem("token", data.token);
       if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
 
-      navigate("/dashboard");
+      onRegister();  
       
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError("An error occurred. Please try again.");
     } finally {
@@ -129,7 +135,11 @@ const Register: React.FC = () => {
             />
           </div>
 
-          <button type="submit" className="login__button" disabled={isSubmitting}>
+          <button
+            type="submit"
+            className="login__button"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Creating account..." : "Sign Up"}
           </button>
         </form>

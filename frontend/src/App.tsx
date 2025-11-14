@@ -39,7 +39,11 @@ const App: React.FC = () => {
         <Route
           path="/register"
           element={
-            isAuthed ? <Navigate to="/dashboard" replace /> : <Register />
+            isAuthed ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Register onRegister={handleLogin} />
+            )
           }
         />
         <Route
