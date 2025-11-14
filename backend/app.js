@@ -14,6 +14,71 @@ const pool = new Pool({
     "postgres://postgres:postgres@db:5432/collabspace",
 });
 
+// user register
+app.post("/auth/register", async (req, res) => {
+  const { name, email, password } = req.body || {};
+
+  if (!name || !email || !password) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "Name, email and password are required" });
+  }
+
+  // very simple email check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "Please enter a valid email address" });
+  }
+
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "Password must be at least 6 characters" });
+  }
+
+  try {
+    // hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // insert user
+    const { rows } = await pool.query(
+      `
+      INSERT INTO users (name, email, password_hash)
+      VALUES ($1, $2, $3)
+      RETURNING id, email
+      `,
+      [name, email, passwordHash]
+    );
+
+    const user = rows[0];
+
+    // create JWT like in login
+    const token = jwt.sign(
+      { sub: user.id, email: user.email },
+      process.env.JWT_SECRET || "dev-secret-change-me",
+      { expiresIn: "7d" }
+    );
+
+    return res.status(201).json({
+      ok: true,
+      user: { id: user.id, email: user.email },
+      token,
+    });
+  } catch (err) {
+    // unique violation on email
+    if (err.code === "23505") {
+      return res
+        .status(409)
+        .json({ ok: false, error: "An account with this email already exists" });
+    }
+
+    console.error("Register error:", err);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
 // user login
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body || {};
