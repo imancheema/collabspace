@@ -61,7 +61,7 @@ const Register: React.FC = () => {
       if (data?.token) localStorage.setItem("token", data.token);
       if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
 
-      navigate("/");
+      navigate("/dashboard");
       
     } catch (err) {
       setError("An error occurred. Please try again.");
