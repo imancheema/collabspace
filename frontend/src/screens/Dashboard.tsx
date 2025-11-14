@@ -1,18 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar, { Group } from "../components/Sidebar";
 import "./Dashboard.css";
 
-const Dashboard: React.FC = () => {
+type User = {
+  name?: string;
+  email?: string;
+};
+
+type DashboardProps = {
+  onSignOut?: () => void; 
+};
+
+const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const parsed: User = JSON.parse(stored);
+        setUserName(parsed.name || parsed.email || "");
+      }
+    } catch (err) {
+      console.error("Failed to parse user from localStorage:", err);
+    }
+  }, []);
 
   return (
     <div className="dashboard">
-      <Navbar />
+    
+      <Navbar onSignOut={onSignOut} />
       <div className="dashboard-layout">
         <Sidebar onSelectGroup={setSelectedGroup} />
+
         <main className="dashboard-main">
-          <h2>Dashboard</h2>
+          <div className="dashboard-main-header">
+            <h2>Dashboard</h2>
+            {userName && (
+              <p className="dashboard-greeting">
+                Welcome back, <span>{userName}</span> 👋
+              </p>
+            )}
+          </div>
+
           {selectedGroup ? (
             <div className="group-detail">
               <h2>{selectedGroup.name}</h2>

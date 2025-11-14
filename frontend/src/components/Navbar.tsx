@@ -1,7 +1,26 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
-const Navbar: React.FC = () => {
+type NavbarProps = {
+  onSignOut?: () => void;
+};
+
+const Navbar: React.FC<NavbarProps> = ({ onSignOut }) => {
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    if (onSignOut) {
+      onSignOut();
+    }
+
+    navigate("/", { replace: true });
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-content">
@@ -11,6 +30,14 @@ const Navbar: React.FC = () => {
           that helps you manage study groups and collaborate in real time.
         </p>
       </div>
+
+      <button
+        type="button"
+        className="navbar-signout"
+        onClick={handleSignOut}
+      >
+        Sign Out
+      </button>
     </nav>
   );
 };
