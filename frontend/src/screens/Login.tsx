@@ -2,14 +2,17 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
-const Login: React.FC = () => {
+type LoginProps = {
+  onLogin: () => void; 
+};
+
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
 
   const API_BASE = "http://localhost:5000";
 
@@ -35,12 +38,11 @@ const Login: React.FC = () => {
         body: JSON.stringify({ email, password }),
       });
 
-     
       let data: any = {};
       try {
         data = await resp.json();
       } catch {
-        /* ignore */
+        // ignore
       }
 
       if (!resp.ok || data?.ok === false) {
@@ -53,12 +55,12 @@ const Login: React.FC = () => {
         return;
       }
 
-      // Success: store token & user from backend response
       if (data?.token) localStorage.setItem("token", data.token);
       if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Go to dashboard/home
-      navigate("/");
+      onLogin();
+
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError("An error occurred. Please try again.");
     } finally {
@@ -70,7 +72,9 @@ const Login: React.FC = () => {
     <div className="login__container">
       <div className="login__card" role="region" aria-labelledby="loginTitle">
         <header className="login__header">
-          <h1 id="loginTitle" className="login__title">CollabSpace</h1>
+          <h1 id="loginTitle" className="login__title">
+            CollabSpace
+          </h1>
           <p className="login__subtitle">Sign in to your account</p>
         </header>
 
@@ -82,7 +86,9 @@ const Login: React.FC = () => {
           )}
 
           <div className="login__group">
-            <label htmlFor="email" className="login__label">Email Address</label>
+            <label htmlFor="email" className="login__label">
+              Email Address
+            </label>
             <input
               id="email"
               name="email"
@@ -98,7 +104,9 @@ const Login: React.FC = () => {
           </div>
 
           <div className="login__group">
-            <label htmlFor="password" className="login__label">Password</label>
+            <label htmlFor="password" className="login__label">
+              Password
+            </label>
             <input
               id="password"
               name="password"
@@ -113,21 +121,20 @@ const Login: React.FC = () => {
             />
           </div>
 
-          <div className="login__options">
-            <label className="login__remember">
-              <input type="checkbox" /> <span>Remember me</span>
-            </label>
-            <a className="login__link" href="/forgot-password">Forgot password?</a>
-          </div>
-
-          <button type="submit" className="login__button" disabled={isSubmitting}>
+          <button
+            type="submit"
+            className="login__button"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
         <footer className="login__footer">
           <span>Don’t have an account? </span>
-         <a className="login__link" href="/register">Sign up</a>
+          <a className="login__link" href="/register">
+            Sign up
+          </a>
         </footer>
       </div>
     </div>

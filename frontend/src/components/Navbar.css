@@ -48,6 +48,7 @@
 
 .navbar-signout:hover {
   background-color: #ffe37a;
+  transform: translateY(-1px);
 }
 
 .navbar-signout:active {

@@ -14,7 +14,6 @@ const pool = new Pool({
     "postgres://postgres:postgres@db:5432/collabspace",
 });
 
-// user register
 app.post("/auth/register", async (req, res) => {
   const { name, email, password } = req.body || {};
 
@@ -24,7 +23,6 @@ app.post("/auth/register", async (req, res) => {
       .json({ ok: false, error: "Name, email and password are required" });
   }
 
-  // very simple email check
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res
@@ -67,7 +65,6 @@ app.post("/auth/register", async (req, res) => {
       token,
     });
   } catch (err) {
-    // unique violation on email
     if (err.code === "23505") {
       return res
         .status(409)

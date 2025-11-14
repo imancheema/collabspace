@@ -2,15 +2,23 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
-const Navbar: React.FC = () => {
+type NavbarProps = {
+  onSignOut?: () => void;
+};
+
+const Navbar: React.FC<NavbarProps> = ({ onSignOut }) => {
   const navigate = useNavigate();
 
   const handleSignOut = () => {
-  
+
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
-    navigate("/login");
+    if (onSignOut) {
+      onSignOut();
+    }
+
+    navigate("/", { replace: true });
   };
 
   return (
@@ -23,7 +31,11 @@ const Navbar: React.FC = () => {
         </p>
       </div>
 
-      <button className="navbar-signout" onClick={handleSignOut}>
+      <button
+        type="button"
+        className="navbar-signout"
+        onClick={handleSignOut}
+      >
         Sign Out
       </button>
     </nav>

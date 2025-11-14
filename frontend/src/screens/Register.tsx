@@ -45,7 +45,7 @@ const Register: React.FC = () => {
       try {
         data = await resp.json();
       } catch {
-        /* ignore */
+        // ignore
       }
 
       if (!resp.ok || data?.ok === false) {
@@ -58,12 +58,11 @@ const Register: React.FC = () => {
         return;
       }
 
-      // auto-login after register – save token & user
       if (data?.token) localStorage.setItem("token", data.token);
       if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
 
-      // go to dashboard/home
       navigate("/");
+      
     } catch (err) {
       setError("An error occurred. Please try again.");
     } finally {

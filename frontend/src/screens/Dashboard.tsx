@@ -3,34 +3,38 @@ import Navbar from "../components/Navbar";
 import Sidebar, { Group } from "../components/Sidebar";
 import "./Dashboard.css";
 
-interface StoredUser {
-  id?: number;
+type User = {
   name?: string;
   email?: string;
-}
+};
 
-const Dashboard: React.FC = () => {
+type DashboardProps = {
+  onSignOut?: () => void; 
+};
+
+const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("user");
-      if (!raw) return;
-
-      const parsed: StoredUser = JSON.parse(raw);
-      const displayName = parsed.name || parsed.email || null;
-      setUserName(displayName);
-    } catch {
-      setUserName(null);
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const parsed: User = JSON.parse(stored);
+        setUserName(parsed.name || parsed.email || "");
+      }
+    } catch (err) {
+      console.error("Failed to parse user from localStorage:", err);
     }
   }, []);
 
   return (
     <div className="dashboard">
-      <Navbar />
+    
+      <Navbar onSignOut={onSignOut} />
       <div className="dashboard-layout">
         <Sidebar onSelectGroup={setSelectedGroup} />
+
         <main className="dashboard-main">
           <div className="dashboard-main-header">
             <h2>Dashboard</h2>
