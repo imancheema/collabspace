@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
 import Sidebar, { Group } from "../components/Sidebar";
 import "./Dashboard.css";
 
@@ -13,6 +14,7 @@ type DashboardProps = {
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
+  const navigate = useNavigate();
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [userName, setUserName] = useState<string>("");
 
@@ -51,7 +53,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
               <p>{selectedGroup.description || "No description provided."}</p>
               <button
                 className="enter-group-btn"
-                onClick={() => console.log(`Entering ${selectedGroup.name}`)}
+                onClick={() => navigate("/resource")}
               >
                 Enter Course Space
               </button>

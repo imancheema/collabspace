@@ -1,12 +1,23 @@
 const express = require("express");
 const { Pool } = require("pg");
 const cors = require("cors");
-//Collaboration websockets
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const { Server } = require("@hocuspocus/server");
-// const { TiptapTransformer } = require('@hocuspocus/transformer');
 
 const app = express();
-app.use(cors());
+
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// parse JSON bodies
 app.use(express.json());
 
 const pool = new Pool({
@@ -15,7 +26,6 @@ const pool = new Pool({
     "postgres://postgres:postgres@db:5432/collabspace",
 });
 
-// user register
 app.post("/auth/register", async (req, res) => {
   const { name, email, password } = req.body || {};
 
@@ -62,7 +72,7 @@ app.post("/auth/register", async (req, res) => {
       ok: true,
       user: {
         id: user.id,
-        name: user.name,   
+        name: user.name,
         email: user.email,
       },
       token,
@@ -79,8 +89,6 @@ app.post("/auth/register", async (req, res) => {
   }
 });
 
-
-// user login
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
@@ -128,7 +136,7 @@ app.post("/auth/login", async (req, res) => {
       ok: true,
       user: {
         id: user.id,
-        name: user.name,   
+        name: user.name,
         email: user.email,
       },
       token,
@@ -139,7 +147,6 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-// create a new group
 app.post("/groups/create", async (req, res) => {
   const { name, description, userId, code } = req.body;
 
@@ -148,7 +155,6 @@ app.post("/groups/create", async (req, res) => {
   }
 
   try {
-    // insert group into PostgreSQL (STUDY_GROUPS table) + return row just inserted
     const groupResult = await pool.query(
       "INSERT INTO STUDY_GROUPS (NAME, DESCRIPTION, CODE) VALUES ($1, $2, $3) RETURNING *",
       [name, description, code]
@@ -169,7 +175,7 @@ app.post("/groups/create", async (req, res) => {
   }
 });
 
-// join a group
+
 app.post("/groups/join", async (req, res) => {
   const { userId, groupCode } = req.body;
 
@@ -180,7 +186,6 @@ app.post("/groups/join", async (req, res) => {
   }
 
   try {
-    // find the group through a code
     const groupResult = await pool.query(
       "SELECT * FROM STUDY_GROUPS WHERE CODE = $1",
       [groupCode]
@@ -190,7 +195,6 @@ app.post("/groups/join", async (req, res) => {
     }
     const group = groupResult.rows[0];
 
-    // check if user is already in the group
     const userGroupResult = await pool.query(
       "SELECT * FROM USER_GROUPS WHERE USER_ID = $1 AND GROUP_ID = $2",
       [userId, group.id]
@@ -199,7 +203,6 @@ app.post("/groups/join", async (req, res) => {
       return res.status(400).json({ error: "User already in group" });
     }
 
-    // add user as member in db
     await pool.query(
       "INSERT INTO USER_GROUPS (USER_ID, GROUP_ID, ROLE) VALUES ($1, $2, $3)",
       [userId, group.id, "member"]
@@ -215,7 +218,7 @@ app.post("/groups/join", async (req, res) => {
   }
 });
 
-// testing db connection
+
 app.get("/", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
@@ -226,13 +229,15 @@ app.get("/", async (req, res) => {
   }
 });
 
-//Collaboration WebSocket
+const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
+
 const hocuspocusServer = new Server({
   name: "collabspace-server",
-  port: 5000, //Same port as api
+  port: COLLAB_PORT,
 });
 
 hocuspocusServer.listen();
+console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
