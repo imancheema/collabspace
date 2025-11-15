@@ -7,7 +7,6 @@ const { Server } = require("@hocuspocus/server");
 
 const app = express();
 
-
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -20,6 +19,23 @@ app.use(
 // parse JSON bodies
 app.use(express.json());
 
+function auth(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Missing token" });
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "dev-secret-change-me"
+    );
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// db connection
 const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL ||
@@ -79,9 +95,10 @@ app.post("/auth/register", async (req, res) => {
     });
   } catch (err) {
     if (err.code === "23505") {
-      return res
-        .status(409)
-        .json({ ok: false, error: "An account with this email already exists" });
+      return res.status(409).json({
+        ok: false,
+        error: "An account with this email already exists",
+      });
     }
 
     console.error("Register error:", err);
@@ -147,11 +164,12 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-app.post("/groups/create", async (req, res) => {
-  const { name, description, userId, code } = req.body;
+app.post("/groups/create", auth, async (req, res) => {
+  const { name, description, code } = req.body;
+  const userId = req.user.sub;
 
-  if (!name || !userId) {
-    return res.status(400).json({ error: "Name and userId are required" });
+  if (!name) {
+    return res.status(400).json({ error: "Name is required" });
   }
 
   try {
@@ -175,14 +193,12 @@ app.post("/groups/create", async (req, res) => {
   }
 });
 
+app.post("/groups/join", auth, async (req, res) => {
+  const { groupCode } = req.body;
+  const userId = req.user.sub;
 
-app.post("/groups/join", async (req, res) => {
-  const { userId, groupCode } = req.body;
-
-  if (!userId || !groupCode) {
-    return res
-      .status(400)
-      .json({ error: "userId and groupCode are required" });
+  if (!groupCode) {
+    return res.status(400).json({ error: "groupCode is required" });
   }
 
   try {
@@ -217,7 +233,6 @@ app.post("/groups/join", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 app.get("/", async (req, res) => {
   try {
