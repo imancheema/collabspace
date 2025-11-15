@@ -20,6 +20,9 @@ import { PiListBulletsBold, PiListNumbersBold } from 'react-icons/pi';
 
 import './TextEditor.css';
 
+//Hocuspocus Websocket Port
+const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
+
 // TEMP - User Generator
 const userColors = ['#EC5E41', '#F29F05', '#F2CB05', '#8C41F0', '#04BF8A'];
 const userNames = ['Albedo', 'Venti', 'Alice', 'Durin', 'Mona'];
@@ -156,7 +159,7 @@ export const TextEditor: React.FC = () => {
 
     //Initialize HocuspocusProvider
     const provider = new HocuspocusProvider({
-      url: 'ws://localhost:5000', //server url
+      url: 'ws://localhost:' + COLLAB_PORT, //server url
       name: 'collabspace',        //room name
       document: doc,
     });
