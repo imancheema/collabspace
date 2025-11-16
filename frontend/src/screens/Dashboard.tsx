@@ -41,7 +41,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
             <h2>Dashboard</h2>
             {userName && (
               <p className="dashboard-greeting">
-                Welcome back, <span>{userName}</span> 👋
+                Welcome back, <span>{userName}</span>
               </p>
             )}
           </div>
@@ -52,7 +52,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
               <p>{selectedGroup.description || "No description provided."}</p>
               <button
                 className="enter-group-btn"
-                onClick={() => navigate("/resource")}
+                onClick={() => {
+                  navigate(`/course/${selectedGroup.code}`, {
+                    state: { groupName: selectedGroup.name },
+                  });
+                }}
               >
                 Enter Course Space
               </button>
