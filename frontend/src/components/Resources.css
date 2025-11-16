@@ -52,3 +52,45 @@
   margin-top: 0.75rem;
   font-size: 0.9rem;
 }
+
+.resources-stats {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+  border: 1px solid #e0e0e0;
+}
+
+.resources-stats h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.resources-stats-error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #b00020;
+}
+
+.resources-stats-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.resources-stats-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.resources-stats-label {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.resources-stats-value {
+  font-size: 1rem;
+  font-weight: 600;
+}

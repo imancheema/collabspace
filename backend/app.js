@@ -5,6 +5,12 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Server } = require("@hocuspocus/server");
 const { Database } = require("@hocuspocus/extension-database");
+const multer = require("multer");
+const {
+  S3Client,
+  PutObjectCommand,
+  ListObjectsV2Command,
+} = require("@aws-sdk/client-s3");
 
 const app = express();
 
@@ -35,7 +41,6 @@ function auth(req, res, next) {
   }
 }
 
-// db connection
 const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL ||
@@ -193,7 +198,6 @@ app.post("/groups/create", auth, async (req, res) => {
   }
 });
 
-// get all my groups
 app.get("/groups/my", auth, async (req, res) => {
   const userId = req.user.sub;
 
@@ -255,7 +259,6 @@ app.post("/groups/join", auth, async (req, res) => {
   }
 });
 
-// post study group's text doc
 app.post("/groups/:groupId/textdocs", async (req, res) => {
   const { name } = req.body;
   const { groupId } = req.params;
@@ -269,20 +272,19 @@ app.post("/groups/:groupId/textdocs", async (req, res) => {
       "INSERT INTO TEXT_DOCS (name, group_id) VALUES ($1, $2) RETURNING id, name, group_id",
       [name, groupId]
     );
-    
-    //Return new document
     res.status(201).json(rows[0]);
-
   } catch (err) {
-    if (err.code === '23505') {
-      return res.status(409).json({ error: "A document with this name already exists in this study group" });
+    if (err.code === "23505") {
+      return res.status(409).json({
+        error:
+          "A document with this name already exists in this study group",
+      });
     }
     console.error("Error creating document:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// get ALL documents for study group
 app.get("/groups/:groupId/textdocs", async (req, res) => {
   const { groupId } = req.params;
   try {
@@ -314,7 +316,6 @@ const hocuspocusServer = new Server({
   port: COLLAB_PORT,
   extensions: [
     new Database({
-      //Fetch and return doc when user joins
       fetch: async ({ documentName }) => {
         const docId = parseInt(documentName, 10);
         if (isNaN(docId)) {
@@ -326,17 +327,12 @@ const hocuspocusServer = new Server({
             "SELECT data FROM TEXT_DOCS WHERE id = $1",
             [docId]
           );
-
-          //Return data if found, otherwise returns null
           return rows.length > 0 ? rows[0].data : null;
-
         } catch (err) {
           console.error("Error fetching document:", err);
           return null;
         }
       },
-      
-      //Save document - autosave
       store: async ({ documentName, state }) => {
         const docId = parseInt(documentName, 10);
         if (isNaN(docId)) {
@@ -344,7 +340,6 @@ const hocuspocusServer = new Server({
         }
 
         try {
-          //Update DB with document data
           await pool.query(
             "UPDATE TEXT_DOCS SET data = $1 WHERE id = $2",
             [state, docId]
@@ -357,16 +352,13 @@ const hocuspocusServer = new Server({
   ],
 });
 
-const multer = require("multer");
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, 
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 const s3 = new S3Client({
-  region: "tor1", 
+  region: "tor1",
   endpoint: process.env.SPACES_ENDPOINT || "https://tor1.digitaloceanspaces.com",
   forcePathStyle: false,
   credentials: {
@@ -382,7 +374,6 @@ app.post("/files/upload", upload.single("file"), async (req, res) => {
     }
 
     const groupCode = req.body.groupCode || "general";
-
     const key = `${groupCode}/${Date.now()}-${req.file.originalname}`;
 
     const putCmd = new PutObjectCommand({
@@ -390,7 +381,7 @@ app.post("/files/upload", upload.single("file"), async (req, res) => {
       Key: key,
       Body: req.file.buffer,
       ContentType: req.file.mimetype,
-      ACL: "private", 
+      ACL: "private",
     });
 
     await s3.send(putCmd);
@@ -406,7 +397,48 @@ app.post("/files/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+app.get("/stats", async (req, res) => {
+  try {
+    const groupCode = req.query.groupCode || null;
 
+    const bucket = process.env.SPACES_BUCKET || "collabspace";
+
+    let continuationToken = undefined;
+    let totalFiles = 0;
+    let totalBytes = 0;
+
+    do {
+      const cmd = new ListObjectsV2Command({
+        Bucket: bucket,
+        ContinuationToken: continuationToken,
+        Prefix: groupCode ? `${groupCode}/` : undefined,
+      });
+
+      const resp = await s3.send(cmd);
+
+      const contents = resp.Contents || [];
+      for (const obj of contents) {
+        totalFiles += 1;
+        totalBytes += obj.Size || 0;
+      }
+
+      continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    const totalMB = totalBytes / (1024 * 1024);
+
+    return res.json({
+      ok: true,
+      totalFiles,
+      totalSizeBytes: totalBytes,
+      totalSizeMB: Number(totalMB.toFixed(2)),
+      scope: groupCode || "all",
+    });
+  } catch (err) {
+    console.error("Stats error:", err);
+    return res.status(500).json({ ok: false, error: "Failed to fetch stats" });
+  }
+});
 hocuspocusServer.listen();
 console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);
 
