@@ -10,7 +10,6 @@ const Navbar: React.FC<NavbarProps> = ({ onSignOut }) => {
   const navigate = useNavigate();
 
   const handleSignOut = () => {
-
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
@@ -25,17 +24,13 @@ const Navbar: React.FC<NavbarProps> = ({ onSignOut }) => {
     <nav className="navbar">
       <div className="navbar-content">
         <h1 className="navbar-title">CollabSpace</h1>
-        <p className="navbar-subtitle">
+        {/* <p className="navbar-subtitle">
           <span className="highlight">CollabSpace</span> is a web application
           that helps you manage study groups and collaborate in real time.
-        </p>
+        </p> */}
       </div>
 
-      <button
-        type="button"
-        className="navbar-signout"
-        onClick={handleSignOut}
-      >
+      <button type="button" className="navbar-signout" onClick={handleSignOut}>
         Sign Out
       </button>
     </nav>
