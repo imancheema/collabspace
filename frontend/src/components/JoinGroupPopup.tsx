@@ -3,15 +3,44 @@ import "./CreateGroupPopup.css";
 
 interface JoinGroupPopupProps {
   onClose: () => void;
+  onGroupJoined: (group: {
+    name: string;
+    description?: string;
+    code: string;
+  }) => void;
 }
 
-const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({ onClose }) => {
+const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
+  onClose,
+  onGroupJoined,
+}) => {
   const [groupCode, setGroupCode] = useState("");
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Joining group with code:", groupCode);
-    onClose();
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch("http://localhost:5000/groups/join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ groupCode }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        onGroupJoined(data.group);
+        onClose();
+      } else {
+        console.error("Failed to join group:", data.error);
+      }
+    } catch (err) {
+      console.error("Network error joining group:", err);
+    }
   };
 
   return (
