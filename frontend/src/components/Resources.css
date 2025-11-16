@@ -52,3 +52,68 @@
   margin-top: 0.75rem;
   font-size: 0.9rem;
 }
+
+.resources-list-container {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+/* Styling for Uploaded Files List*/
+.resources-list-container h4 {
+  margin: 0 0 12px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.resources-status-error {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: #d9534f;
+}
+
+.resources-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.file-list-item:last-child {
+  border-bottom: none;
+}
+
+.file-list-item:hover {
+  background-color: #f9f9f9;
+}
+
+.file-list-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.file-list-link:hover {
+  text-decoration: underline;
+}
+
+.file-list-size {
+  font-size: 0.9rem;
+  color: #666;
+  white-space: nowrap;
+  padding-left: 10px;
+}
