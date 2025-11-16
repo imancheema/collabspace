@@ -91,3 +91,11 @@
   font-family: "Josefin Sans", sans-serif;
   font-size: 15px;
 }
+
+.error-text {
+  color: red;
+  font-size: 14px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  text-align: center;
+}

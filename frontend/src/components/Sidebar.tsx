@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CreateGroupPopup from "./CreateGroupPopup";
 import JoinGroupPopup from "./JoinGroupPopup";
 import "./Sidebar.css";
@@ -18,10 +18,34 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectGroup }) => {
   const [showJoinPopup, setShowJoinPopup] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
 
+  useEffect(() => {
+    const fetchGroups = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const res = await fetch("http://localhost:5000/groups/my", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setGroups(data.groups);
+        } else {
+          console.error("Failed to fetch groups:", data.error);
+        }
+      } catch (err) {
+        console.error("Network error fetching groups:", err);
+      }
+    };
+
+    fetchGroups();
+  }, []);
+
   const handleGroupCreated = (group: Group) => {
     setGroups((prev) => [...prev, group]);
   };
-
   return (
     <>
       <aside className="sidebar">
@@ -67,7 +91,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectGroup }) => {
       </aside>
 
       {showJoinPopup && (
-        <JoinGroupPopup onClose={() => setShowJoinPopup(false)} />
+        <JoinGroupPopup
+          onClose={() => setShowJoinPopup(false)}
+          onGroupJoined={(group: Group) =>
+            setGroups((prev) => [...prev, group])
+          }
+        />
       )}
     </>
   );

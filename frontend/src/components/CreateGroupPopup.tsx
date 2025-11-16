@@ -27,15 +27,23 @@ const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({
     e.preventDefault();
     if (!groupName || !groupCode) return;
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("You must be logged in to create a group");
+      return;
+    }
+
     try {
       const response = await fetch("http://localhost:5000/groups/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           name: groupName,
           description: groupDescription,
           code: groupCode,
-          userId: 1, // need to get from login state later
         }),
       });
 
@@ -51,6 +59,9 @@ const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({
         description: groupDescription,
         code: groupCode,
       });
+      setGroupName("");
+      setGroupDescription("");
+      setGroupCode("");
       onClose();
     } catch (err) {
       console.error("Network or server error:", err);

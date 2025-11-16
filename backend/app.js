@@ -7,7 +7,6 @@ const { Server } = require("@hocuspocus/server");
 
 const app = express();
 
-
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -20,6 +19,23 @@ app.use(
 // parse JSON bodies
 app.use(express.json());
 
+function auth(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Missing token" });
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "dev-secret-change-me"
+    );
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// db connection
 const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL ||
@@ -79,9 +95,10 @@ app.post("/auth/register", async (req, res) => {
     });
   } catch (err) {
     if (err.code === "23505") {
-      return res
-        .status(409)
-        .json({ ok: false, error: "An account with this email already exists" });
+      return res.status(409).json({
+        ok: false,
+        error: "An account with this email already exists",
+      });
     }
 
     console.error("Register error:", err);
@@ -147,11 +164,12 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-app.post("/groups/create", async (req, res) => {
-  const { name, description, userId, code } = req.body;
+app.post("/groups/create", auth, async (req, res) => {
+  const { name, description, code } = req.body;
+  const userId = req.user.sub;
 
-  if (!name || !userId) {
-    return res.status(400).json({ error: "Name and userId are required" });
+  if (!name) {
+    return res.status(400).json({ error: "Name is required" });
   }
 
   try {
@@ -175,14 +193,32 @@ app.post("/groups/create", async (req, res) => {
   }
 });
 
+// get all my groups
+app.get("/groups/my", auth, async (req, res) => {
+  const userId = req.user.sub;
 
-app.post("/groups/join", async (req, res) => {
-  const { userId, groupCode } = req.body;
+  try {
+    const result = await pool.query(
+      `SELECT g.*
+       FROM STUDY_GROUPS g
+       JOIN USER_GROUPS ug ON g.id = ug.group_id
+       WHERE ug.user_id = $1`,
+      [userId]
+    );
 
-  if (!userId || !groupCode) {
-    return res
-      .status(400)
-      .json({ error: "userId and groupCode are required" });
+    res.json({ groups: result.rows });
+  } catch (error) {
+    console.error("Error fetching user groups:", error);
+    res.status(500).json({ error: "Failed to fetch user groups" });
+  }
+});
+
+app.post("/groups/join", auth, async (req, res) => {
+  const { groupCode } = req.body;
+  const userId = req.user.sub;
+
+  if (!groupCode) {
+    return res.status(400).json({ error: "groupCode is required" });
   }
 
   try {
@@ -191,8 +227,9 @@ app.post("/groups/join", async (req, res) => {
       [groupCode]
     );
     if (groupResult.rows.length === 0) {
-      return res.status(404).json({ error: "Could not find group" });
+      return res.status(404).json({ error: "Group not found" });
     }
+
     const group = groupResult.rows[0];
 
     const userGroupResult = await pool.query(
@@ -217,7 +254,6 @@ app.post("/groups/join", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 app.get("/", async (req, res) => {
   try {
