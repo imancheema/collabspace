@@ -5,6 +5,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Server } = require("@hocuspocus/server");
 const { Database } = require("@hocuspocus/extension-database");
+const { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const multer = require("multer");
 
 const app = express();
 
@@ -307,6 +310,9 @@ app.get("/", async (req, res) => {
   }
 });
 
+//------------------------------------------
+// Text Editor Collaboration WebSocket
+//------------------------------------------
 const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
 
 const hocuspocusServer = new Server({
@@ -357,9 +363,9 @@ const hocuspocusServer = new Server({
   ],
 });
 
-const multer = require("multer");
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-
+//------------------------------------------
+// Object Storage Handling
+//------------------------------------------
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, 
@@ -375,13 +381,31 @@ const s3 = new S3Client({
   },
 });
 
-app.post("/files/upload", upload.single("file"), async (req, res) => {
+//Used for storage auth
+//Checks if user is member of study_group
+async function checkGroupMembership(userId, groupCode) {
+  const { rows } = await pool.query(
+    `SELECT g.id FROM STUDY_GROUPS g
+     JOIN USER_GROUPS ug ON g.id = ug.group_id
+     WHERE ug.user_id = $1 AND g.code = $2`,
+    [userId, groupCode]
+  );//Joins both study_group and user_group to create list of groups and their members
+  return rows.length > 0;
+}
+
+app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ ok: false, error: "No file uploaded" });
     }
 
     const groupCode = req.body.groupCode || "general";
+
+    //Checks if user is a member of group
+    const isMember = await checkGroupMembership(userId, groupCode);
+    if (!isMember && groupCode !== "general") {
+      return res.status(403).json({ ok: false, error: "User not authorized for this group" });
+    }
 
     const key = `${groupCode}/${Date.now()}-${req.file.originalname}`;
 
