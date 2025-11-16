@@ -69,7 +69,7 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/text-editor"
+          path="/group/:groupId/text-editor/:documentId" //Path requires groupId and documentId
           element={isAuthed ? <TextEditor /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />

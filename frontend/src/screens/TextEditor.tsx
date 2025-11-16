@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -164,6 +165,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
 //Main Editor Component
 export const TextEditor: React.FC = () => {
+
+  //Grab document ID from url
+  const { documentId } = useParams<{ documentId: string }>();
+
   const [editorData, setEditorData] = useState<{
     ydoc: Y.Doc;
     provider: HocuspocusProvider;
@@ -198,26 +203,26 @@ export const TextEditor: React.FC = () => {
 
   //useEffect runs once on mount to create provider
   useEffect(() => {
+    //Will not init if doc id missing
+    if (!documentId) return;
+
     const doc = new Y.Doc();
 
     //Initialize HocuspocusProvider
     const provider = new HocuspocusProvider({
       url: 'ws://localhost:' + COLLAB_PORT, //server url
-      name: 'collabspace',        //room name
+      name: documentId,     //room name and name of doc
       document: doc,
     });
 
     //WebSocket logging  
     console.log("Hocuspocus Provider Initialized");
-
     provider.on('status', (event: { status: string }) => { 
       console.log('Provider Status:', event.status);
     });
-
     provider.on('synced', () => {
       console.log('Provider Synced!');
     });
-
     provider.on('disconnect', (event: { code: number, reason: string }) => {
       console.error('Provider Disconnected:', event.code, event.reason);
     });

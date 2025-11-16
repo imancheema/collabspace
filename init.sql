@@ -12,11 +12,19 @@ CREATE TABLE IF NOT EXISTS STUDY_GROUPS (
     CODE VARCHAR(10) UNIQUE NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS USER_GROUPS (
+CREATE TABLE IF NOT EXISTS USER_GROUPS (    --Ties users to study groups
     USER_ID INT REFERENCES USERS(ID),
     GROUP_ID INT REFERENCES STUDY_GROUPS(ID),
     ROLE VARCHAR(20) DEFAULT 'member',
     PRIMARY KEY (USER_ID, GROUP_ID)
+);
+
+CREATE TABLE IF NOT EXISTS TEXT_DOCS (      --Persists text documents
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,                                           -- Document name
+  group_id INT NOT NULL REFERENCES STUDY_GROUPS(ID) ON DELETE CASCADE,  -- Document is tied to study group foreign key
+  data BYTEA,                                                           -- Stores Yjs document as binary
+  UNIQUE(group_id, name)
 );
 
 INSERT INTO users (NAME, EMAIL, PASSWORD_HASH)
