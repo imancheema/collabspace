@@ -193,6 +193,26 @@ app.post("/groups/create", auth, async (req, res) => {
   }
 });
 
+// get all my groups
+app.get("/groups/my", auth, async (req, res) => {
+  const userId = req.user.sub;
+
+  try {
+    const result = await pool.query(
+      `SELECT g.*
+       FROM STUDY_GROUPS g
+       JOIN USER_GROUPS ug ON g.id = ug.group_id
+       WHERE ug.user_id = $1`,
+      [userId]
+    );
+
+    res.json({ groups: result.rows });
+  } catch (error) {
+    console.error("Error fetching user groups:", error);
+    res.status(500).json({ error: "Failed to fetch user groups" });
+  }
+});
+
 app.post("/groups/join", auth, async (req, res) => {
   const { groupCode } = req.body;
   const userId = req.user.sub;
