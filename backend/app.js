@@ -430,6 +430,65 @@ app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
   }
 });
 
+//List all object files in group
+app.get("/files/list/:groupCode", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    //Authorize- check if user is in group
+    const isMember = await checkGroupMembership(userId, groupCode);
+    if (!isMember) {
+      return res.status(403).json({ ok: false, error: "User not authorized for this group" });
+    }
+
+    // List objects from S3
+    const listCmd = new ListObjectsV2Command({
+      Bucket: process.env.SPACES_BUCKET || "collabspace",
+      Prefix: `${groupCode}/`, //Bucket sub folder
+    });
+
+    const { Contents } = await s3.send(listCmd);
+
+    if (!Contents || Contents.length === 0) {
+      return res.json({ files: [] });
+    }
+
+    //Create pre-signed URLs for each file
+    const files = await Promise.all(
+      Contents
+        //Filter out folders 
+        .filter(file => !file.Key.endsWith('/')) 
+        .map(async (file) => {
+          const getCmd = new GetObjectCommand({
+            Bucket: process.env.SPACES_BUCKET || "collabspace",
+            Key: file.Key,
+          });
+          
+          //Creates URL that expires in 1hr
+          const url = await getSignedUrl(s3, getCmd, { expiresIn: 3600 });
+          
+          return {
+            key: file.Key,
+            //Returns just filename
+            name: file.Key.split('/').pop(), 
+            size: file.Size,
+            lastModified: file.LastModified,
+            url: url,
+          };
+        })
+    );
+    
+    //Sort by latest
+    files.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+
+    res.json({ files });
+  } catch (err) {
+    console.error("Error listing files:", err);
+    res.status(500).json({ ok: false, error: "Failed to list files" });
+  }
+});
+
 
 hocuspocusServer.listen();
 console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);
