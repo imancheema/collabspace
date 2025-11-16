@@ -259,7 +259,7 @@ app.post("/groups/join", auth, async (req, res) => {
   }
 });
 
-app.post("/groups/:groupId/textdocs", async (req, res) => {
+app.post("/groups/:groupId/textdocs", auth, async (req, res) => {
   const { name } = req.body;
   const { groupId } = req.params;
 
@@ -285,7 +285,7 @@ app.post("/groups/:groupId/textdocs", async (req, res) => {
   }
 });
 
-app.get("/groups/:groupId/textdocs", async (req, res) => {
+app.get("/groups/:groupId/textdocs", auth, async (req, res) => {
   const { groupId } = req.params;
   try {
     const { rows } = await pool.query(
@@ -397,7 +397,7 @@ app.post("/files/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-app.get("/stats", async (req, res) => {
+app.get("/stats", auth, async (req, res) => {
   try {
     const groupCode = req.query.groupCode || null;
 
