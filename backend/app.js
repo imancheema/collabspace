@@ -227,8 +227,9 @@ app.post("/groups/join", auth, async (req, res) => {
       [groupCode]
     );
     if (groupResult.rows.length === 0) {
-      return res.status(404).json({ error: "Could not find group" });
+      return res.status(404).json({ error: "Group not found" });
     }
+
     const group = groupResult.rows[0];
 
     const userGroupResult = await pool.query(

@@ -15,11 +15,15 @@ const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
   onGroupJoined,
 }) => {
   const [groupCode, setGroupCode] = useState("");
+  const [error, setError] = useState("");
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      setError("You must be logged in to join a group");
+      return;
+    }
 
     try {
       const res = await fetch("http://localhost:5000/groups/join", {
@@ -36,10 +40,10 @@ const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
         onGroupJoined(data.group);
         onClose();
       } else {
-        console.error("Failed to join group:", data.error);
+        setError(data.error || "Could not join group");
       }
     } catch (err) {
-      console.error("Network error joining group:", err);
+      setError("Network error joining group");
     }
   };
 
@@ -57,13 +61,13 @@ const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
               onChange={(e) => setGroupCode(e.target.value)}
             />
           </label>
-
+          {error && <p className="error-text">{error}</p>}
           <div className="popup-buttons">
             <button type="submit">Join</button>
             <button type="button" onClick={onClose}>
               Cancel
             </button>
-          </div>
+          </div>{" "}
         </form>
       </div>
     </div>
