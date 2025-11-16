@@ -10,7 +10,7 @@ type User = {
 };
 
 type DashboardProps = {
-  onSignOut?: () => void; 
+  onSignOut?: () => void;
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
@@ -32,7 +32,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
 
   return (
     <div className="dashboard">
-    
       <Navbar onSignOut={onSignOut} />
       <div className="dashboard-layout">
         <Sidebar onSelectGroup={setSelectedGroup} />
