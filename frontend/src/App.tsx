@@ -4,6 +4,7 @@ import Dashboard from "./screens/Dashboard";
 import TextEditor from "./screens/TextEditor";
 import Login from "./screens/Login";
 import Register from "./screens/Register";
+import CourseSpace from "./screens/CourseSpace";
 import "./App.css";
 
 const App: React.FC = () => {
@@ -58,14 +59,18 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/text-editor"
+          path="/course/:groupCode"
           element={
             isAuthed ? (
-              <TextEditor />
+              <CourseSpace onSignOut={handleLogout} />
             ) : (
               <Navigate to="/" replace />
             )
           }
+        />
+        <Route
+          path="/text-editor"
+          element={isAuthed ? <TextEditor /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

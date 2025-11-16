@@ -6,7 +6,11 @@ import Announcements from "../components/Announcements";
 import Resources from "../components/Resources";
 import Settings from "../components/Settings";
 
-const CourseSpace: React.FC = () => {
+type CourseSpaceProps = {
+  onSignOut?: () => void;
+};
+
+const CourseSpace: React.FC<CourseSpaceProps> = ({ onSignOut }) => {
   const { groupCode } = useParams();
   const location = useLocation();
   const { groupName } = location.state || { groupName: "Course Space" };
@@ -15,7 +19,7 @@ const CourseSpace: React.FC = () => {
 
   return (
     <>
-      <Navbar />
+      <Navbar onSignOut={onSignOut} />
       <div className="course-page">
         <h1>{groupName}</h1>
         <h2>Group Code: {groupCode}</h2>
