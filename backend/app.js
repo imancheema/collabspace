@@ -17,7 +17,6 @@ app.use(
   })
 );
 
-// parse JSON bodies
 app.use(express.json());
 
 function auth(req, res, next) {
@@ -275,7 +274,7 @@ app.post("/groups/:groupId/textdocs", async (req, res) => {
     res.status(201).json(rows[0]);
 
   } catch (err) {
-    if (err.code === '23505') { //Unique constraint violation
+    if (err.code === '23505') {
       return res.status(409).json({ error: "A document with this name already exists in this study group" });
     }
     console.error("Error creating document:", err);
@@ -319,7 +318,7 @@ const hocuspocusServer = new Server({
       fetch: async ({ documentName }) => {
         const docId = parseInt(documentName, 10);
         if (isNaN(docId)) {
-          return null; //invalid docId
+          return null;
         }
 
         try {
@@ -357,6 +356,56 @@ const hocuspocusServer = new Server({
     }),
   ],
 });
+
+const multer = require("multer");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, 
+});
+
+const s3 = new S3Client({
+  region: "tor1", 
+  endpoint: process.env.SPACES_ENDPOINT || "https://tor1.digitaloceanspaces.com",
+  forcePathStyle: false,
+  credentials: {
+    accessKeyId: process.env.SPACES_KEY,
+    secretAccessKey: process.env.SPACES_SECRET,
+  },
+});
+
+app.post("/files/upload", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, error: "No file uploaded" });
+    }
+
+    const groupCode = req.body.groupCode || "general";
+
+    const key = `${groupCode}/${Date.now()}-${req.file.originalname}`;
+
+    const putCmd = new PutObjectCommand({
+      Bucket: process.env.SPACES_BUCKET || "collabspace",
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+      ACL: "private", 
+    });
+
+    await s3.send(putCmd);
+
+    return res.json({
+      ok: true,
+      message: "File uploaded",
+      key,
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    return res.status(500).json({ ok: false, error: "Upload failed" });
+  }
+});
+
 
 hocuspocusServer.listen();
 console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);

@@ -39,7 +39,9 @@ const CourseSpace: React.FC<CourseSpaceProps> = ({ onSignOut }) => {
 
           <div className="course-container">
             {activeTab === "announcements" && <Announcements />}
-            {activeTab === "resources" && <Resources />}
+            {activeTab === "resources" && (
+              <Resources groupCode={groupCode || ""} />
+            )}
             {activeTab === "settings" && <Settings />}
           </div>
         </div>
