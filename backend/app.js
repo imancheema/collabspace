@@ -468,10 +468,16 @@ app.get("/files/list/:groupCode", auth, async (req, res) => {
           //Creates URL that expires in 1hr
           const url = await getSignedUrl(s3, getCmd, { expiresIn: 3600 });
           
+          //Full filename -> timestamp-Filename.ext
+          const storageName = file.Key.split('/').pop();
+          //Remove timestamp
+          const fileDisplayName = storageName.includes('-') 
+            ? storageName.substring(storageName.indexOf('-') + 1) 
+            : storageName;
+
           return {
             key: file.Key,
-            //Returns just filename
-            name: file.Key.split('/').pop(), 
+            name: fileDisplayName, 
             size: file.Size,
             lastModified: file.LastModified,
             url: url,
