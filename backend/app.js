@@ -4,6 +4,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Server } = require("@hocuspocus/server");
+const { Database } = require("@hocuspocus/extension-database");
 
 const app = express();
 
@@ -255,6 +256,48 @@ app.post("/groups/join", auth, async (req, res) => {
   }
 });
 
+// post study group's text doc
+app.post("/groups/:groupId/textdocs", async (req, res) => {
+  const { name } = req.body;
+  const { groupId } = req.params;
+
+  if (!name) {
+    return res.status(400).json({ error: "Document name is required" });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      "INSERT INTO TEXT_DOCS (name, group_id) VALUES ($1, $2) RETURNING id, name, group_id",
+      [name, groupId]
+    );
+    
+    //Return new document
+    res.status(201).json(rows[0]);
+
+  } catch (err) {
+    if (err.code === '23505') { //Unique constraint violation
+      return res.status(409).json({ error: "A document with this name already exists in this study group" });
+    }
+    console.error("Error creating document:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// get ALL documents for study group
+app.get("/groups/:groupId/textdocs", async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, name FROM TEXT_DOCS WHERE group_id = $1",
+      [groupId]
+    );
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching documents:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.get("/", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
@@ -270,6 +313,49 @@ const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
 const hocuspocusServer = new Server({
   name: "collabspace-server",
   port: COLLAB_PORT,
+  extensions: [
+    new Database({
+      //Fetch and return doc when user joins
+      fetch: async ({ documentName }) => {
+        const docId = parseInt(documentName, 10);
+        if (isNaN(docId)) {
+          return null; //invalid docId
+        }
+
+        try {
+          const { rows } = await pool.query(
+            "SELECT data FROM TEXT_DOCS WHERE id = $1",
+            [docId]
+          );
+
+          //Return data if found, otherwise returns null
+          return rows.length > 0 ? rows[0].data : null;
+
+        } catch (err) {
+          console.error("Error fetching document:", err);
+          return null;
+        }
+      },
+      
+      //Save document - autosave
+      store: async ({ documentName, state }) => {
+        const docId = parseInt(documentName, 10);
+        if (isNaN(docId)) {
+          return;
+        }
+
+        try {
+          //Update DB with document data
+          await pool.query(
+            "UPDATE TEXT_DOCS SET data = $1 WHERE id = $2",
+            [state, docId]
+          );
+        } catch (err) {
+          console.error("Error storing document:", err);
+        }
+      },
+    }),
+  ],
 });
 
 hocuspocusServer.listen();

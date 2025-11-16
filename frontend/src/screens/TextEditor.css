@@ -8,7 +8,7 @@
 .editor-content-wrapper {
   flex-grow: 1;
   overflow-y: auto; /* Page scroll */
-  background-color: #f0f2f5; /* Light gray background */
+  background-color: #f0f2f5;
   padding: 2rem; /* Space for type sheet */
 }
 
@@ -17,7 +17,7 @@
   /* Tiptap editor content area */
   max-width: 850px;
   min-height: 1000px;
-  margin: 0 auto; /* Center the page */
+  margin: 0 auto;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -81,7 +81,7 @@
 /* Tiptap / ProseMirror Element Styles */
 /* Styles content within text editor */
 .ProseMirror {
-  outline: none; /* No ugly focus ring */
+  outline: none;
 }
 
 .ProseMirror > * + * {
@@ -144,7 +144,7 @@
 }
 
 .ProseMirror li > p {
-  margin-top: 0; /* Fix extra space in list items */
+  margin-top: 0;
   margin-bottom: 0;
 }
 
