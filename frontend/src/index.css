@@ -2,6 +2,8 @@
 
 :root {
   --secondary-color: #96c9f8;
+  --secondary-color-lighter: #cfe7fd;
+  --secondary-color-darker: rgb(41, 118, 190);
   --side-bar-menu: #bfe0fe;
 
   --third-color: #f5c5d6;
