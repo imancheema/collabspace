@@ -126,3 +126,55 @@
   color: #495057;
   flex-shrink: 0;
 }
+
+/* Styling for create doc section */
+.create-doc-button {
+  padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  border: none;
+  background-color: var(--primary-color, #007bff);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.create-doc-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.create-doc-form input[type="text"] {
+  flex-grow: 1;
+  font-family: "Josefin Sans", sans-serif;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.create-doc-form button {
+  padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  border: none;
+  background-color: var(--secondary-color, #ffb703);
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.create-doc-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.create-doc-form button.cancel-button {
+  background-color: #6c757d;
+  color: white;
+}

@@ -38,6 +38,11 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
   const [isLoadingList, setIsLoadingList] = useState<boolean>(true);
   const [listError, setListError] = useState<string>("");
 
+  //States for text doc creation
+  const [showCreateDoc, setShowCreateDoc] = useState<boolean>(false);
+  const [newDocName, setNewDocName] = useState<string>("");
+  const [isCreatingDoc, setIsCreatingDoc] = useState<boolean>(false);
+
   const fetchResources = useCallback(async () => {
     if (!groupCode) {
       setIsLoadingList(false);
@@ -123,6 +128,48 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     }
   };
 
+  //Create text doc for group
+  const handleCreateDoc = async () => {
+    if (!newDocName.trim()) {
+      setStatus("Document name cannot be empty.");
+      return;
+    }
+    if (!groupId) {
+      setStatus("Group not loaded. Please refresh.");
+      return;
+    }
+
+    setIsCreatingDoc(true);
+    setStatus("");
+    try {
+      const resp = await fetch(`${API_BASE}/groups/${groupId}/textdocs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+        body: JSON.stringify({ name: newDocName }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to create document.");
+      }
+
+      //Success
+      setStatus("Document created successfully!");
+      setNewDocName("");
+      setShowCreateDoc(false);
+      await fetchResources(); //Refresh res list
+      
+    } catch (err: any) {
+      console.error(err);
+      setStatus(err.message);
+    } finally {
+      setIsCreatingDoc(false);
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -195,6 +242,51 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
           {isUploading ? "Uploading..." : "Upload"}
         </button>
       </div>
+
+      {!showCreateDoc && (
+        <div className="resources-upload-row">
+          <button
+            type="button"
+            onClick={() => {
+              setShowCreateDoc(true);
+              setStatus("");
+            }}
+            className="create-doc-button"
+          >
+            Create Text Doc
+          </button>
+        </div>
+      )}
+
+      {showCreateDoc && (
+        <div className="create-doc-form">
+          <input
+            type="text"
+            placeholder="Enter new document name..."
+            value={newDocName}
+            onChange={(e) => setNewDocName(e.target.value)}
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={handleCreateDoc}
+            disabled={isCreatingDoc}
+          >
+            {isCreatingDoc ? "Saving..." : "Save"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowCreateDoc(false);
+              setNewDocName("");
+            }}
+            disabled={isCreatingDoc}
+            className="cancel-button"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {status && <p className="resources-status">{status}</p>}
 
