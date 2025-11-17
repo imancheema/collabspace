@@ -369,16 +369,32 @@ app.delete("/groups/:groupCode", auth, async (req, res) => {
   }
 });
 
+//Used for post study group auth
+async function checkGroupMembershipById(userId, groupId) {
+  const { rows } = await pool.query(
+    `SELECT group_id FROM USER_GROUPS WHERE user_id = $1 AND group_id = $2`,
+    [userId, groupId]
+  );
+  return rows.length > 0;
+}
+
 // post study group's text doc
-app.post("/groups/:groupId/textdocs", async (req, res) => {
+app.post("/groups/:groupId/textdocs", auth, async (req, res) => {
   const { name } = req.body;
   const { groupId } = req.params;
+  const userId = req.user.sub;
 
   if (!name) {
     return res.status(400).json({ error: "Document name is required" });
   }
 
   try {
+    //User authorized check
+    const isMember = await checkGroupMembershipById(userId, groupId);
+    if (!isMember) {
+      return res.status(403).json({ error: "User not authorized for this group" });
+    }
+
     const { rows } = await pool.query(
       "INSERT INTO TEXT_DOCS (name, group_id) VALUES ($1, $2) RETURNING id, name, group_id",
       [name, groupId]
