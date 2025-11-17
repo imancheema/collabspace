@@ -400,7 +400,8 @@ app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
     }
 
     const groupCode = req.body.groupCode || "general";
-
+    const userId = req.user.sub;
+    
     //Checks if user is a member of group
     const isMember = await checkGroupMembership(userId, groupCode);
     if (!isMember && groupCode !== "general") {
