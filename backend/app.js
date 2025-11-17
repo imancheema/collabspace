@@ -333,6 +333,42 @@ app.post("/groups/:groupCode/leave", auth, async (req, res) => {
   }
 });
 
+// delete group
+app.delete("/groups/:groupCode", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    const groupRes = await pool.query(
+      `SELECT id FROM study_groups WHERE code = $1`,
+      [groupCode]
+    );
+    if (!groupRes.rows.length)
+      return res.status(404).json({ error: "Group not found" });
+
+    const groupId = groupRes.rows[0].id;
+
+    const roleRes = await pool.query(
+      `SELECT role FROM user_groups WHERE user_id = $1 AND group_id = $2`,
+      [userId, groupId]
+    );
+    if (!roleRes.rows.length)
+      return res.status(403).json({ error: "You're not in this group" });
+
+    if (roleRes.rows[0].role !== "admin")
+      return res
+        .status(403)
+        .json({ error: "Only the admin can delete the group" });
+
+    await pool.query(`DELETE FROM user_groups WHERE group_id = $1`, [groupId]);
+    await pool.query(`DELETE FROM study_groups WHERE id = $1`, [groupId]);
+    res.json({ message: "Group deleted successfully" });
+  } catch (err) {
+    console.error("Delete group error:", err);
+    res.status(500).json({ error: "Failed to delete group" });
+  }
+});
+
 // post study group's text doc
 app.post("/groups/:groupId/textdocs", async (req, res) => {
   const { name } = req.body;
