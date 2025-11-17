@@ -100,6 +100,8 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
 
       setStatus("File uploaded successfully");
       setFile(null);
+
+      await fetchFiles();
     } catch (err) {
       console.error(err);
       setStatus("An error occurred while uploading.");
