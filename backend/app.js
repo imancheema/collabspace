@@ -258,6 +258,48 @@ app.post("/groups/join", auth, async (req, res) => {
   }
 });
 
+// Get all members in a group by group code
+app.get("/groups/:groupCode/members", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const group = await pool.query(
+      `SELECT id FROM study_groups WHERE code = $1`,
+      [groupCode]
+    );
+
+    if (!group.rows.length)
+      return res.status(404).json({ error: "Group not found" });
+
+    const groupId = group.rows[0].id;
+
+    const membership = await pool.query(
+      `SELECT 1 FROM user_groups WHERE user_id = $1 AND group_id = $2`,
+      [userId, groupId]
+    );
+
+    if (!membership.rows.length)
+      return res.status(403).json({ error: "You're not in this group" });
+
+    const members = await pool.query(
+      `SELECT u.id, u.name, u.email, ug.role
+       FROM users u
+       JOIN user_groups ug ON u.id = ug.user_id
+       WHERE ug.group_id = $1
+       ORDER BY ug.role DESC, u.name ASC`,
+      [groupId]
+    );
+
+    res.json({ members: members.rows });
+  } catch (err) {
+    console.error("Error fetching group members:", err);
+    res.status(500).json({ error: "Error fetching group members" });
+  }
+});
+
 // post study group's text doc
 app.post("/groups/:groupId/textdocs", async (req, res) => {
   const { name } = req.body;
@@ -272,13 +314,14 @@ app.post("/groups/:groupId/textdocs", async (req, res) => {
       "INSERT INTO TEXT_DOCS (name, group_id) VALUES ($1, $2) RETURNING id, name, group_id",
       [name, groupId]
     );
-    
+
     //Return new document
     res.status(201).json(rows[0]);
-
   } catch (err) {
-    if (err.code === '23505') {
-      return res.status(409).json({ error: "A document with this name already exists in this study group" });
+    if (err.code === "23505") {
+      return res.status(409).json({
+        error: "A document with this name already exists in this study group",
+      });
     }
     console.error("Error creating document:", err);
     res.status(500).json({ error: "Server error" });
@@ -335,13 +378,12 @@ const hocuspocusServer = new Server({
 
           //Return data if found, otherwise returns null
           return rows.length > 0 ? rows[0].data : null;
-
         } catch (err) {
           console.error("Error fetching document:", err);
           return null;
         }
       },
-      
+
       //Save document - autosave
       store: async ({ documentName, state }) => {
         const docId = parseInt(documentName, 10);
@@ -351,10 +393,10 @@ const hocuspocusServer = new Server({
 
         try {
           //Update DB with document data
-          await pool.query(
-            "UPDATE TEXT_DOCS SET data = $1 WHERE id = $2",
-            [state, docId]
-          );
+          await pool.query("UPDATE TEXT_DOCS SET data = $1 WHERE id = $2", [
+            state,
+            docId,
+          ]);
         } catch (err) {
           console.error("Error storing document:", err);
         }
@@ -368,12 +410,13 @@ const hocuspocusServer = new Server({
 //------------------------------------------
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, 
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 const s3 = new S3Client({
-  region: "tor1", 
-  endpoint: process.env.SPACES_ENDPOINT || "https://tor1.digitaloceanspaces.com",
+  region: "tor1",
+  endpoint:
+    process.env.SPACES_ENDPOINT || "https://tor1.digitaloceanspaces.com",
   forcePathStyle: false,
   credentials: {
     accessKeyId: process.env.SPACES_KEY,
@@ -416,7 +459,7 @@ app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
       Key: key,
       Body: req.file.buffer,
       ContentType: req.file.mimetype,
-      ACL: "private", 
+      ACL: "private",
     });
 
     await s3.send(putCmd);
