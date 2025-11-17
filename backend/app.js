@@ -5,7 +5,12 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Server } = require("@hocuspocus/server");
 const { Database } = require("@hocuspocus/extension-database");
-const { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+} = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const multer = require("multer");
 
@@ -300,6 +305,70 @@ app.get("/groups/:groupCode/members", auth, async (req, res) => {
   }
 });
 
+// leave group
+app.post("/groups/:groupCode/leave", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    const group = await pool.query(
+      `SELECT id FROM study_groups WHERE code = $1`,
+      [groupCode]
+    );
+
+    if (!group.rows.length)
+      return res.status(404).json({ error: "Couldn't find group" });
+
+    const groupId = group.rows[0].id;
+
+    await pool.query(
+      `DELETE FROM user_groups WHERE user_id = $1 AND group_id = $2`,
+      [userId, groupId]
+    );
+
+    res.json({ message: "Left group successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to leave group" });
+  }
+});
+
+// delete group
+app.delete("/groups/:groupCode", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    const groupRes = await pool.query(
+      `SELECT id FROM study_groups WHERE code = $1`,
+      [groupCode]
+    );
+    if (!groupRes.rows.length)
+      return res.status(404).json({ error: "Group not found" });
+
+    const groupId = groupRes.rows[0].id;
+
+    const roleRes = await pool.query(
+      `SELECT role FROM user_groups WHERE user_id = $1 AND group_id = $2`,
+      [userId, groupId]
+    );
+    if (!roleRes.rows.length)
+      return res.status(403).json({ error: "You're not in this group" });
+
+    if (roleRes.rows[0].role !== "admin")
+      return res
+        .status(403)
+        .json({ error: "Only the admin can delete the group" });
+
+    await pool.query(`DELETE FROM user_groups WHERE group_id = $1`, [groupId]);
+    await pool.query(`DELETE FROM study_groups WHERE id = $1`, [groupId]);
+    res.json({ message: "Group deleted successfully" });
+  } catch (err) {
+    console.error("Delete group error:", err);
+    res.status(500).json({ error: "Failed to delete group" });
+  }
+});
+
 // post study group's text doc
 app.post("/groups/:groupId/textdocs", async (req, res) => {
   const { name } = req.body;
@@ -432,7 +501,7 @@ async function checkGroupMembership(userId, groupCode) {
      JOIN USER_GROUPS ug ON g.id = ug.group_id
      WHERE ug.user_id = $1 AND g.code = $2`,
     [userId, groupCode]
-  );//Joins both study_group and user_group to create list of groups and their members
+  ); //Joins both study_group and user_group to create list of groups and their members
   //Retrns group obj
   return rows.length > 0 ? rows[0] : null;
 }
@@ -449,7 +518,9 @@ app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
     //Checks if user is a member of group
     const group = await checkGroupMembership(userId, groupCode);
     if (!group && groupCode !== "general") {
-      return res.status(403).json({ ok: false, error: "User not authorized for this group" });
+      return res
+        .status(403)
+        .json({ ok: false, error: "User not authorized for this group" });
     }
 
     const key = `${groupCode}/${Date.now()}-${req.file.originalname}`;
@@ -485,7 +556,9 @@ app.get("/groups/:groupCode/resources", auth, async (req, res) => {
     //Authorize- check if user is in group
     const group = await checkGroupMembership(userId, groupCode);
     if (!group) {
-      return res.status(403).json({ ok: false, error: "User not authorized for this group" });
+      return res
+        .status(403)
+        .json({ ok: false, error: "User not authorized for this group" });
     }
     const groupId = group.id;
 
@@ -505,28 +578,28 @@ app.get("/groups/:groupCode/resources", auth, async (req, res) => {
       //Create pre-signed URLs for each file
       return Promise.all(
         Contents
-          //Filter out folders 
-          .filter(file => !file.Key.endsWith('/')) 
+          //Filter out folders
+          .filter((file) => !file.Key.endsWith("/"))
           .map(async (file) => {
             const getCmd = new GetObjectCommand({
               Bucket: process.env.SPACES_BUCKET || "collabspace",
               Key: file.Key,
             });
-            
+
             //Creates URL that expires in 1hr
             const url = await getSignedUrl(s3, getCmd, { expiresIn: 3600 });
-            
+
             //Full filename -> timestamp-Filename.ext
-            const storageName = file.Key.split('/').pop();
+            const storageName = file.Key.split("/").pop();
             //Remove timestamp
-            const fileDisplayName = storageName.includes('-') 
-              ? storageName.substring(storageName.indexOf('-') + 1) 
+            const fileDisplayName = storageName.includes("-")
+              ? storageName.substring(storageName.indexOf("-") + 1)
               : storageName;
 
             return {
-              type: 'file',
+              type: "file",
               key: file.Key,
-              name: fileDisplayName, 
+              name: fileDisplayName,
               size: file.Size,
               lastModified: file.LastModified,
               url: url,
@@ -541,9 +614,9 @@ app.get("/groups/:groupCode/resources", auth, async (req, res) => {
         "SELECT id, name FROM TEXT_DOCS WHERE group_id = $1",
         [groupId]
       );
-      
-      return rows.map(doc => ({
-        type: 'doc',
+
+      return rows.map((doc) => ({
+        type: "doc",
         key: `doc-${doc.id}`, //Frontend doc identifier
         id: doc.id,
         name: doc.name,
@@ -551,9 +624,12 @@ app.get("/groups/:groupCode/resources", auth, async (req, res) => {
         lastModified: null,
       }));
     };
-    
+
     //Merge both set of files
-    const [objFiles, textDocs] = await Promise.all([getObjFiles(), getTextDocs()]);
+    const [objFiles, textDocs] = await Promise.all([
+      getObjFiles(),
+      getTextDocs(),
+    ]);
     const allResources = [...objFiles, ...textDocs];
 
     //Sort by name
@@ -566,7 +642,6 @@ app.get("/groups/:groupCode/resources", auth, async (req, res) => {
     res.status(500).json({ ok: false, error: "Failed to list files" });
   }
 });
-
 
 hocuspocusServer.listen();
 console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);

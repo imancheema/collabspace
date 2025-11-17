@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+
 import { useParams, useLocation } from "react-router-dom";
 import "./CourseSpace.css";
 import Navbar from "../components/Navbar";
@@ -21,6 +23,9 @@ const CourseSpace: React.FC<CourseSpaceProps> = ({ onSignOut }) => {
     <>
       <Navbar onSignOut={onSignOut} />
       <div className="course-page">
+        <Link to="/" className="back-link">
+          Back to Dashboard
+        </Link>
         <h1>{groupName}</h1>
         <h2>Group Code: {groupCode}</h2>
 

@@ -18,6 +18,17 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUserId(payload.sub);
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     if (!groupCode) return;
@@ -47,10 +58,56 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
     fetchMembers();
   }, [groupCode]);
 
+  const handleLeaveGroup = async () => {
+    if (!groupCode) return;
+    if (!window.confirm("Are you sure you want to leave this group?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/groups/${groupCode}/leave`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to leave group");
+      alert("You left the group");
+      window.location.href = "/";
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!groupCode) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this group? This cannot be undone."
+      )
+    )
+      return;
+
+    try {
+      const res = await fetch(`${API_BASE}/groups/${groupCode}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete group");
+      alert("Group deleted successfully");
+      window.location.href = "/";
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   if (loading) return <p>Fetching the members</p>;
   if (error) return <p>Couldn’t load the members. Try refreshing.</p>;
   if (!members.length)
     return <p>Looks like there’s no one in this group yet.</p>;
+  const isAdmin = members.find((m) => m.id === userId)?.role === "admin";
 
   return (
     <div className="settings-tab">
@@ -73,6 +130,16 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
           ))}
         </tbody>
       </table>
+      <div className="settings-actions">
+        <button className="leave-btn" onClick={handleLeaveGroup}>
+          Leave Group
+        </button>
+        {isAdmin && (
+          <button className="delete-btn" onClick={handleDeleteGroup}>
+            Delete Group
+          </button>
+        )}
+      </div>
     </div>
   );
 };
