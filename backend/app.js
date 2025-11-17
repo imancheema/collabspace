@@ -5,6 +5,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Server } = require("@hocuspocus/server");
 const { Database } = require("@hocuspocus/extension-database");
+const { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const multer = require("multer");
 
 const app = express();
 
@@ -350,6 +353,9 @@ app.get("/", async (req, res) => {
   }
 });
 
+//------------------------------------------
+// Text Editor Collaboration WebSocket
+//------------------------------------------
 const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
 
 const hocuspocusServer = new Server({
@@ -399,9 +405,9 @@ const hocuspocusServer = new Server({
   ],
 });
 
-const multer = require("multer");
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-
+//------------------------------------------
+// Object Storage Handling
+//------------------------------------------
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -418,13 +424,33 @@ const s3 = new S3Client({
   },
 });
 
-app.post("/files/upload", upload.single("file"), async (req, res) => {
+//Used for storage auth
+//Checks if user is member of study_group
+async function checkGroupMembership(userId, groupCode) {
+  const { rows } = await pool.query(
+    `SELECT g.id FROM STUDY_GROUPS g
+     JOIN USER_GROUPS ug ON g.id = ug.group_id
+     WHERE ug.user_id = $1 AND g.code = $2`,
+    [userId, groupCode]
+  );//Joins both study_group and user_group to create list of groups and their members
+  //Retrns group obj
+  return rows.length > 0 ? rows[0] : null;
+}
+
+app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ ok: false, error: "No file uploaded" });
     }
 
     const groupCode = req.body.groupCode || "general";
+    const userId = req.user.sub;
+
+    //Checks if user is a member of group
+    const group = await checkGroupMembership(userId, groupCode);
+    if (!group && groupCode !== "general") {
+      return res.status(403).json({ ok: false, error: "User not authorized for this group" });
+    }
 
     const key = `${groupCode}/${Date.now()}-${req.file.originalname}`;
 
@@ -448,6 +474,99 @@ app.post("/files/upload", upload.single("file"), async (req, res) => {
     return res.status(500).json({ ok: false, error: "Upload failed" });
   }
 });
+
+//Returns all resources associated with group
+//Object storage + Yjs text docs
+app.get("/groups/:groupCode/resources", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    //Authorize- check if user is in group
+    const group = await checkGroupMembership(userId, groupCode);
+    if (!group) {
+      return res.status(403).json({ ok: false, error: "User not authorized for this group" });
+    }
+    const groupId = group.id;
+
+    //Async fetch files from object storage
+    const getObjFiles = async () => {
+      const listCmd = new ListObjectsV2Command({
+        Bucket: process.env.SPACES_BUCKET || "collabspace",
+        Prefix: `${groupCode}/`, //Bucket sub folder
+      });
+
+      const { Contents } = await s3.send(listCmd);
+
+      if (!Contents || Contents.length === 0) {
+        return [];
+      }
+
+      //Create pre-signed URLs for each file
+      return Promise.all(
+        Contents
+          //Filter out folders 
+          .filter(file => !file.Key.endsWith('/')) 
+          .map(async (file) => {
+            const getCmd = new GetObjectCommand({
+              Bucket: process.env.SPACES_BUCKET || "collabspace",
+              Key: file.Key,
+            });
+            
+            //Creates URL that expires in 1hr
+            const url = await getSignedUrl(s3, getCmd, { expiresIn: 3600 });
+            
+            //Full filename -> timestamp-Filename.ext
+            const storageName = file.Key.split('/').pop();
+            //Remove timestamp
+            const fileDisplayName = storageName.includes('-') 
+              ? storageName.substring(storageName.indexOf('-') + 1) 
+              : storageName;
+
+            return {
+              type: 'file',
+              key: file.Key,
+              name: fileDisplayName, 
+              size: file.Size,
+              lastModified: file.LastModified,
+              url: url,
+            };
+          })
+      );
+    };
+
+    //Async fetch Yjs docs from Postgres TEXT_DOCS
+    const getTextDocs = async () => {
+      const { rows } = await pool.query(
+        "SELECT id, name FROM TEXT_DOCS WHERE group_id = $1",
+        [groupId]
+      );
+      
+      return rows.map(doc => ({
+        type: 'doc',
+        key: `doc-${doc.id}`, //Frontend doc identifier
+        id: doc.id,
+        name: doc.name,
+        size: null,
+        lastModified: null,
+      }));
+    };
+    
+    //Merge both set of files
+    const [objFiles, textDocs] = await Promise.all([getObjFiles(), getTextDocs()]);
+    const allResources = [...objFiles, ...textDocs];
+
+    //Sort by name
+    allResources.sort((a, b) => a.name.localeCompare(b.name));
+
+    //Returns unified file list and groupId for text-editor url
+    res.json({ groupId, resources: allResources });
+  } catch (err) {
+    console.error("Error listing files:", err);
+    res.status(500).json({ ok: false, error: "Failed to list files" });
+  }
+});
+
 
 hocuspocusServer.listen();
 console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);
