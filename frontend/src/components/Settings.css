@@ -1,0 +1,41 @@
+.settings-tab {
+  font-family: "Josefin Sans", sans-serif;
+  color: #333;
+}
+
+.settings-tab h3 {
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--font-color);
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.members-table th,
+.members-table td {
+  padding: 1rem;
+  text-align: left;
+  font-size: 1rem;
+  color: #555;
+}
+
+.members-table thead {
+  background-color: var(--secondary-color-lighter);
+}
+
+.members-table tbody tr {
+  border-bottom: 1px solid #eee;
+}
+
+.members-table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
