@@ -1,18 +1,29 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { FaFileAlt } from "react-icons/fa";
+import { FaRegFileLines } from "react-icons/fa6";
 import "./Resources.css";
 
 type ResourcesProps = {
   groupCode?: string;
 };
 
-//File objects returned from backend
-type FileObject = {
+//Files returned from backend
+type ResourceObject = {
+  type: 'file';   //Object storage files
   key: string;
   name: string;
   size: number;
   lastModified: string;
   url: string;
-};
+} | {
+  type: 'doc';    //Collaborative text docs
+  key: string;
+  id: number;
+  name: string;
+  size: null;
+  lastModified: null;
+};;
 
 const API_BASE = "http://localhost:5000";
 
@@ -21,12 +32,13 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
   const [status, setStatus] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  //States for list of files in storage
-  const [filesList, setFilesList] = useState<FileObject[]>([]);
+  //States for list of files
+  const [resourcesList, setResourcesList] = useState<ResourceObject[]>([]);
+  const [groupId, setGroupId] = useState<number | null>(null);
   const [isLoadingList, setIsLoadingList] = useState<boolean>(true);
   const [listError, setListError] = useState<string>("");
 
-  const fetchFiles = useCallback(async () => {
+  const fetchResources = useCallback(async () => {
     if (!groupCode) {
       setIsLoadingList(false);
       return;
@@ -35,7 +47,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     setIsLoadingList(true);
     setListError("");
     try {
-      const resp = await fetch(`${API_BASE}/files/list/${groupCode}`, {
+      const resp = await fetch(`${API_BASE}/groups/${groupCode}/resources`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
@@ -47,8 +59,9 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
         throw new Error(err.error || "Failed to fetch files.");
       }
 
-      const data: { files: FileObject[] } = await resp.json();
-      setFilesList(data.files);
+      const data: { groupId: number; resources: ResourceObject[] } = await resp.json();
+      setGroupId(data.groupId);
+      setResourcesList(data.resources);
     } catch (err: any) {
       console.error(err);
       setListError(err.message || "Could not load files.");
@@ -57,10 +70,10 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     }
   }, [groupCode]);
 
-  //fetch list of files on load
+  //fetch list of resources on load
   useEffect(() => {
-    fetchFiles();
-  }, [fetchFiles]);
+    fetchResources();
+  }, [fetchResources]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files?.[0] || null;
@@ -101,7 +114,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
       setStatus("File uploaded successfully");
       setFile(null);
 
-      await fetchFiles();
+      await fetchResources();
     } catch (err) {
       console.error(err);
       setStatus("An error occurred while uploading.");
@@ -115,35 +128,47 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return `(${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]})`;
   };
 
-  const renderFileList = () => {
+  const renderResourceList = () => {
     if (isLoadingList) {
       return <p>Loading files...</p>;
     }
     if (listError) {
       return <p className="resources-status-error">{listError}</p>;
     }
-    if (filesList.length === 0) {
-      return <p>No files have been uploaded to this group yet.</p>;
+    if (resourcesList.length === 0) {
+      return <p>No files have been uploaded to this group yet!</p>;
     }
 
     return (
       <ul className="resources-file-list">
-        {filesList.map((file) => (
-          <li key={file.key} className="file-list-item">
-            <a
-              href={file.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="file-list-link"
-              title={file.name}
-            >
-              {file.name}
-            </a>
+        {resourcesList.map((res) => (
+          <li key={res.key} className="file-list-item">
+            {res.type === 'file' ? (
+              //Object storage file
+              <a
+                href={res.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="file-list-link"
+                title={res.name}
+              >
+                <FaFileAlt className="file-icon" /> {res.name}
+              </a>
+            ) : (
+              //Collaborative text edit doc
+              <Link
+                to={`/group/${groupId}/text-editor/${res.id}`}  //Links to text-editor page
+                className="file-list-link"
+                title={res.name}
+              >
+                <FaRegFileLines className="file-icon" /> {res.name}
+              </Link>
+            )}
             <span className="file-list-size">
-              ({formatFileSize(file.size)})
+              {res.type === 'file' ? formatFileSize(res.size) : ""}
             </span>
           </li>
         ))}
@@ -175,7 +200,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
 
       <div className="resources-list-container">
         <h4>Uploaded Files</h4>
-        {renderFileList()}
+        {renderResourceList()}
       </div>
     </div>
   );

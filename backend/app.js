@@ -390,7 +390,8 @@ async function checkGroupMembership(userId, groupCode) {
      WHERE ug.user_id = $1 AND g.code = $2`,
     [userId, groupCode]
   );//Joins both study_group and user_group to create list of groups and their members
-  return rows.length > 0;
+  //Retrns group obj
+  return rows.length > 0 ? rows[0] : null;
 }
 
 app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
@@ -401,10 +402,10 @@ app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
 
     const groupCode = req.body.groupCode || "general";
     const userId = req.user.sub;
-    
+
     //Checks if user is a member of group
-    const isMember = await checkGroupMembership(userId, groupCode);
-    if (!isMember && groupCode !== "general") {
+    const group = await checkGroupMembership(userId, groupCode);
+    if (!group && groupCode !== "general") {
       return res.status(403).json({ ok: false, error: "User not authorized for this group" });
     }
 
@@ -431,65 +432,92 @@ app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
   }
 });
 
-//List all object files in group
-app.get("/files/list/:groupCode", auth, async (req, res) => {
+//Returns all resources associated with group
+//Object storage + Yjs text docs
+app.get("/groups/:groupCode/resources", auth, async (req, res) => {
   const { groupCode } = req.params;
   const userId = req.user.sub;
 
   try {
     //Authorize- check if user is in group
-    const isMember = await checkGroupMembership(userId, groupCode);
-    if (!isMember) {
+    const group = await checkGroupMembership(userId, groupCode);
+    if (!group) {
       return res.status(403).json({ ok: false, error: "User not authorized for this group" });
     }
+    const groupId = group.id;
 
-    // List objects from S3
-    const listCmd = new ListObjectsV2Command({
-      Bucket: process.env.SPACES_BUCKET || "collabspace",
-      Prefix: `${groupCode}/`, //Bucket sub folder
-    });
+    //Async fetch files from object storage
+    const getObjFiles = async () => {
+      const listCmd = new ListObjectsV2Command({
+        Bucket: process.env.SPACES_BUCKET || "collabspace",
+        Prefix: `${groupCode}/`, //Bucket sub folder
+      });
 
-    const { Contents } = await s3.send(listCmd);
+      const { Contents } = await s3.send(listCmd);
 
-    if (!Contents || Contents.length === 0) {
-      return res.json({ files: [] });
-    }
+      if (!Contents || Contents.length === 0) {
+        return [];
+      }
 
-    //Create pre-signed URLs for each file
-    const files = await Promise.all(
-      Contents
-        //Filter out folders 
-        .filter(file => !file.Key.endsWith('/')) 
-        .map(async (file) => {
-          const getCmd = new GetObjectCommand({
-            Bucket: process.env.SPACES_BUCKET || "collabspace",
-            Key: file.Key,
-          });
-          
-          //Creates URL that expires in 1hr
-          const url = await getSignedUrl(s3, getCmd, { expiresIn: 3600 });
-          
-          //Full filename -> timestamp-Filename.ext
-          const storageName = file.Key.split('/').pop();
-          //Remove timestamp
-          const fileDisplayName = storageName.includes('-') 
-            ? storageName.substring(storageName.indexOf('-') + 1) 
-            : storageName;
+      //Create pre-signed URLs for each file
+      return Promise.all(
+        Contents
+          //Filter out folders 
+          .filter(file => !file.Key.endsWith('/')) 
+          .map(async (file) => {
+            const getCmd = new GetObjectCommand({
+              Bucket: process.env.SPACES_BUCKET || "collabspace",
+              Key: file.Key,
+            });
+            
+            //Creates URL that expires in 1hr
+            const url = await getSignedUrl(s3, getCmd, { expiresIn: 3600 });
+            
+            //Full filename -> timestamp-Filename.ext
+            const storageName = file.Key.split('/').pop();
+            //Remove timestamp
+            const fileDisplayName = storageName.includes('-') 
+              ? storageName.substring(storageName.indexOf('-') + 1) 
+              : storageName;
 
-          return {
-            key: file.Key,
-            name: fileDisplayName, 
-            size: file.Size,
-            lastModified: file.LastModified,
-            url: url,
-          };
-        })
-    );
+            return {
+              type: 'file',
+              key: file.Key,
+              name: fileDisplayName, 
+              size: file.Size,
+              lastModified: file.LastModified,
+              url: url,
+            };
+          })
+      );
+    };
+
+    //Async fetch Yjs docs from Postgres TEXT_DOCS
+    const getTextDocs = async () => {
+      const { rows } = await pool.query(
+        "SELECT id, name FROM TEXT_DOCS WHERE group_id = $1",
+        [groupId]
+      );
+      
+      return rows.map(doc => ({
+        type: 'doc',
+        key: `doc-${doc.id}`, //Frontend doc identifier
+        id: doc.id,
+        name: doc.name,
+        size: null,
+        lastModified: null,
+      }));
+    };
     
-    //Sort by latest
-    files.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+    //Merge both set of files
+    const [objFiles, textDocs] = await Promise.all([getObjFiles(), getTextDocs()]);
+    const allResources = [...objFiles, ...textDocs];
 
-    res.json({ files });
+    //Sort by name
+    allResources.sort((a, b) => a.name.localeCompare(b.name));
+
+    //Returns unified file list and groupId for text-editor url
+    res.json({ groupId, resources: allResources });
   } catch (err) {
     console.error("Error listing files:", err);
     res.status(500).json({ ok: false, error: "Failed to list files" });

@@ -105,6 +105,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 70%;
+  display: flex;
+  align-items: center;
 }
 
 .file-list-link:hover {
@@ -116,4 +118,11 @@
   color: #666;
   white-space: nowrap;
   padding-left: 10px;
+}
+
+.file-icon {
+  margin-right: 8px;
+  font-size: 0.9em;
+  color: #495057;
+  flex-shrink: 0;
 }
