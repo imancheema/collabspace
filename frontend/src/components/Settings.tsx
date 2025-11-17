@@ -52,6 +52,26 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
   if (!members.length)
     return <p>Looks like there’s no one in this group yet.</p>;
 
+  const handleLeaveGroup = async () => {
+    if (!groupCode) return;
+    if (!window.confirm("Are you sure you want to leave this group?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/groups/${groupCode}/leave`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to leave group");
+      alert("You left the group");
+      window.location.href = "/";
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div className="settings-tab">
       <h3>Group Members</h3>
@@ -73,6 +93,9 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
           ))}
         </tbody>
       </table>
+      <button className="leave-btn" onClick={handleLeaveGroup}>
+        Leave Group
+      </button>
     </div>
   );
 };
