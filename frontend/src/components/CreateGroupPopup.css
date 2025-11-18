@@ -8,25 +8,24 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: "Josefin Sans", sans-serif;
-  font-weight: 400;
+  font-family: "Quicksand", sans-serif;
   z-index: 999;
 }
 
 .popup-content {
-  background: #ffffff;
-  padding: 2rem;
+  background: #fff;
+  padding: 1.1rem;
   border-radius: 12px;
   width: 400px;
   max-width: 90%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .popup-content h2 {
-  margin-bottom: 1rem;
-  font-weight: 600;
-  text-align: center;
+  margin-bottom: 1.2rem;
+  font-weight: 800;
+  font-family: "Quicksand", sans-serif;
 }
 
 .popup-content form label {
@@ -39,63 +38,72 @@
 .popup-content textarea {
   width: 100%;
   padding: 0.6rem 0.8rem;
-  border-radius: 30px;
+  border-radius: 8px;
   border: 1px solid #ccc;
   font-family: "Josefin Sans", sans-serif;
   box-sizing: border-box;
 }
 
 .generate-button {
-  padding: 0.6rem 1rem;
-  border-radius: 30px;
-  border: none;
-  background-color: var(--third-color);
-  color: var(--black);
-  font-weight: 600;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #f7f7f7;
+  color: #444;
+  font-weight: 500;
   cursor: pointer;
-  font-family: "Josefin Sans", sans-serif;
   transition: 0.2s;
+  font-family: "Quicksand", sans-serif;
 }
 
 .generate-button:hover {
-  transform: scale(1.02);
+  background: #ececec;
+  font-family: "Quicksand", sans-serif;
 }
-
 .popup-buttons {
   display: flex;
-  justify-content: space-between;
+  gap: 10px;
   margin-top: 1.5rem;
 }
 
 .popup-buttons button {
-  padding: 0.6rem 1.2rem;
-  border-radius: 30px;
-  border: none;
-  background-color: var(--secondary-color);
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  font-family: "Josefin Sans", sans-serif;
   transition: 0.2s;
+  font-family: "Quicksand", sans-serif;
 }
 
-.popup-buttons button:hover {
-  transform: scale(1.02);
+.popup-buttons button[type="submit"] {
+  background: var(--secondary-color-darker);
+  color: #fff;
+  border: none;
+}
+
+.popup-buttons button[type="submit"]:hover {
+  background: var(--secondary-color-darker);
+}
+
+.popup-buttons button[type="button"] {
+  background: #e5e5e5;
+  color: #333;
+  border: none;
 }
 
 .generated-code {
   margin-top: 0.5rem;
-  margin-left: 5px;
-  text-align: left-end;
   font-weight: 600;
-  color: var(--fourth-color);
-  font-family: "Josefin Sans", sans-serif;
+  color: var(--secondary-color-darker);
   font-size: 15px;
+  letter-spacing: 0.5px;
 }
 
 .error-text {
-  color: red;
+  color: #d90429;
   font-size: 14px;
-  margin-top: 8px;
-  margin-bottom: 8px;
+  margin: 8px 0;
   text-align: center;
 }

@@ -1,10 +1,9 @@
 .navbar {
   background-color: var(--black);
-  font-family: "Josefin Sans", sans-serif;
+  font-family: "Quicksand", sans-serif;
   color: rgb(255, 255, 255);
   padding: 1rem 2rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -44,13 +43,9 @@
   background-color: var(--secondary-color);
   color: #000;
   transition: background-color 0.2s ease, transform 0.1s ease;
+  font-family: "Quicksand", sans-serif;
 }
 
 .navbar-signout:hover {
-  background-color: #ffe37a;
   transform: translateY(-1px);
-}
-
-.navbar-signout:active {
-  transform: translateY(0);
 }

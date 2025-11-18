@@ -1,9 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap");
 
 :root {
-  --secondary-color: #96c9f8;
+  --secondary-color: #78b6f0;
   --secondary-color-lighter: #cfe7fd;
-  --secondary-color-darker: rgb(41, 118, 190);
+  --secondary-color-hover: #b9d8f4;
+  --secondary-color-darker: rgb(44, 131, 212);
   --side-bar-menu: #bfe0fe;
 
   --third-color: #f5c5d6;

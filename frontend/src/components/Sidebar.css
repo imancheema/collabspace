@@ -7,11 +7,12 @@
 }
 
 .sidebar-title {
-  font-weight: 600;
-  font-size: 1.5rem;
-  text-align: center;
   margin-bottom: 0rem;
-  padding-bottom: 0;
+  font-weight: 800;
+  font-family: "Quicksand", sans-serif;
+  font-size: 30px;
+  margin-top: 0;
+  text-align: center;
 }
 
 .sidebar-subtitle {
@@ -25,18 +26,19 @@
 }
 
 .sidebar-btn {
-  padding: 0.6rem 1.2rem;
+  padding: 0.6rem 1.5rem;
   background-color: var(--secondary-color);
   border: none;
-  border-radius: 30px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.2s;
   text-align: center;
   align-self: center;
   width: fit-content;
-  font-family: "Josefin Sans", sans-serif;
+  font-family: "Quicksand", sans-serif;
   margin-bottom: 15px;
+  font-size: 15px;
 }
 
 .sidebar-btn:hover {
@@ -45,17 +47,18 @@
 }
 
 .course-card {
-  background-color: #adecb2;
+  background-color: var(--secondary-color-lighter);
   border-radius: 8px;
   padding: 10px 15px;
   margin-bottom: 10px;
   cursor: pointer;
   width: 100%;
   box-sizing: border-box;
+  transition: 0.2s;
 }
 
 .course-card:hover {
-  background-color: #97de9d;
+  background-color: var(--secondary-color-hover);
 }
 
 .course-empty {
