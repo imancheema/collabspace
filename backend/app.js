@@ -369,6 +369,119 @@ app.delete("/groups/:groupCode", auth, async (req, res) => {
   }
 });
 
+//-----------------------------------------------------------
+// Announcements Endpoints
+//-----------------------------------------------------------
+// Get all announcements for group
+app.get("/groups/:groupCode/announcements", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    //Authorization and group Id retrieval
+    const group = await checkGroupMembership(userId, groupCode);
+    if (!group) {
+      return res.status(403).json({ error: "User not authorized for this group" });
+    }
+    const groupId = group.id;
+
+    //Get announcements
+    const { rows } = await pool.query(
+      `
+      SELECT a.*, u.name AS user_name
+      FROM ANNOUNCEMENTS a
+      LEFT JOIN USERS u ON a.user_id = u.id
+      WHERE a.group_id = $1
+      ORDER BY a.created_at DESC
+      `,
+      [groupId]
+    );
+
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching announcements:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+//Create new announcement
+app.post("/groups/:groupCode/announcements", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+  const { task } = req.body;
+
+  if (!task) {
+    return res.status(400).json({ error: "Task content is required" });
+  }
+
+  try {
+    const group = await checkGroupMembership(userId, groupCode);
+    if (!group) {
+      return res.status(403).json({ error: "User not authorized for this group" });
+    }
+    const groupId = group.id;
+
+    //Add new announcement
+    const { rows } = await pool.query(
+      `
+      INSERT INTO ANNOUNCEMENTS (TASK, GROUP_ID, USER_ID)
+      VALUES ($1, $2, $3)
+      RETURNING *
+      `,
+      [task, groupId, userId]
+    );
+
+    const newAnnouncement = rows[0];
+
+    const userResult = await pool.query("SELECT name FROM USERS WHERE id = $1", [
+      newAnnouncement.user_id,
+    ]);
+    const userName = userResult.rows[0]?.name || null;
+
+    //Return new announcement along with username
+    res.status(201).json({ ...newAnnouncement, user_name: userName });
+  } catch (err) {
+    console.error("Error creating announcement:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+//Delete announcement
+app.delete("/announcements/:announcementId", auth, async (req, res) => {
+  const { announcementId } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    //Find announcement's group
+    const announcementResult = await pool.query(
+      "SELECT group_id FROM ANNOUNCEMENTS WHERE id = $1",
+      [announcementId]
+    );
+
+    if (announcementResult.rows.length === 0) {
+      return res.status(404).json({ error: "Announcement not found" });
+    }
+
+    const { group_id } = announcementResult.rows[0];
+
+    //User auth check
+    const isMember = await checkGroupMembershipById(userId, group_id);
+    if (!isMember) {
+      return res.status(403).json({ error: "User not authorized to delete this" });
+    }
+
+    //If auth, delete
+    await pool.query("DELETE FROM ANNOUNCEMENTS WHERE id = $1", [
+      announcementId,
+    ]);
+
+    res.status(204).send();
+  } catch (err) {
+    console.error("Error deleting announcement:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 //Used for post study group auth
 async function checkGroupMembershipById(userId, groupId) {
   const { rows } = await pool.query(
