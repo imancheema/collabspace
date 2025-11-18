@@ -131,11 +131,11 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
         </tbody>
       </table>
       <div className="settings-actions">
-        <button className="leave-btn" onClick={handleLeaveGroup}>
+        <button className="settings-btn leave" onClick={handleLeaveGroup}>
           Leave Group
         </button>
         {isAdmin && (
-          <button className="delete-btn" onClick={handleDeleteGroup}>
+          <button className="settings-btn delete" onClick={handleDeleteGroup}>
             Delete Group
           </button>
         )}

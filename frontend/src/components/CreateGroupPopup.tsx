@@ -71,7 +71,7 @@ const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({
   return (
     <div className="popup-overlay">
       <div className="popup-content">
-        <h2>Create New Group</h2>
+        <h2>Create new group</h2>
         <form onSubmit={handleCreate}>
           <label>
             Group Name:
