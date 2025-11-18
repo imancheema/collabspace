@@ -1,41 +1,80 @@
 .settings-tab {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: "Quicksand", sans-serif;
   color: #333;
+  padding: 1.5rem;
 }
 
 .settings-tab h3 {
   margin-bottom: 1rem;
-  font-weight: 700;
+  margin-top: 0;
+  font-weight: 600;
   font-size: 1.5rem;
-  color: var(--font-color);
+  color: #222;
 }
 
 .members-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: #fff;
   border-radius: 10px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-top: 1rem;
-}
-
-.members-table th,
-.members-table td {
-  padding: 1rem;
-  text-align: left;
-  font-size: 1rem;
-  color: #555;
 }
 
 .members-table thead {
   background-color: var(--secondary-color-lighter);
 }
 
+.members-table th,
+.members-table td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #555;
+}
+
 .members-table tbody tr {
   border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease;
 }
 
 .members-table tbody tr:nth-child(even) {
   background-color: #fafafa;
+}
+
+.members-table tbody tr:hover {
+  background-color: #f0f8ff;
+}
+.settings-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 10px;
+}
+
+.settings-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Quicksand", sans-serif;
+}
+
+.settings-btn.leave {
+  background-color: #e5e5e5;
+  color: #333;
+}
+
+.settings-btn.leave:hover {
+  background-color: #d4d4d4;
+}
+
+.settings-btn.delete {
+  background-color: #f5c5d6;
+}
+
+.settings-btn.delete:hover {
+  background-color: #f0a9be;
 }
