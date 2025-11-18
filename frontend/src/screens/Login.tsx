@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
+import LoginNavbar from "../components/LoginNavbar";
 
 type LoginProps = {
-  onLogin: () => void; 
+  onLogin: () => void;
 };
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -69,75 +70,75 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="login__container">
-      <div className="login__card" role="region" aria-labelledby="loginTitle">
-        <header className="login__header">
-          <h1 id="loginTitle" className="login__title">
-            CollabSpace
-          </h1>
-          <p className="login__subtitle">Sign in to your account</p>
-        </header>
+    <>
+      <LoginNavbar />
+      <div className="login__container">
+        <div className="login__card" role="region" aria-labelledby="loginTitle">
+          <header className="login__header">
+            <h1 id="loginTitle" className="login__title">
+              Sign in to your account
+            </h1>
+          </header>
 
-        <form onSubmit={handleSubmit} className="login__form" noValidate>
-          {error && (
-            <div className="login__error" role="alert">
-              {error}
+          <form onSubmit={handleSubmit} className="login__form" noValidate>
+            {error && (
+              <div className="login__error" role="alert">
+                {error}
+              </div>
+            )}
+
+            <div className="login__group">
+              <label htmlFor="email" className="login__label">
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                className="login__input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={!!error && !email ? "true" : "false"}
+                required
+              />
             </div>
-          )}
 
-          <div className="login__group">
-            <label htmlFor="email" className="login__label">
-              Email Address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              className="login__input"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={!!error && !email ? "true" : "false"}
-              required
-            />
-          </div>
+            <div className="login__group">
+              <label htmlFor="password" className="login__label">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                className="login__input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={!!error && !password ? "true" : "false"}
+                required
+              />
+            </div>
 
-          <div className="login__group">
-            <label htmlFor="password" className="login__label">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              className="login__input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-invalid={!!error && !password ? "true" : "false"}
-              required
-            />
-          </div>
+            <button
+              type="submit"
+              className="login__button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
 
-          <button
-            type="submit"
-            className="login__button"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-
-        <footer className="login__footer">
-          <span>Don’t have an account? </span>
-          <a className="login__link" href="/register">
-            Sign up
-          </a>
-        </footer>
+          <footer className="login__footer">
+            <span>Don’t have an account? </span>
+            <a className="login__link" href="/register">
+              Sign up
+            </a>
+          </footer>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
