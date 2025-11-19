@@ -7,7 +7,7 @@
   display: flex;
   align-items: baseline;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .resources-header h3 {
@@ -20,6 +20,57 @@
   margin: 0;
   font-size: 0.9rem;
   color: #666;
+}
+
+/* Stats section */
+.resources-stats {
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #ececec;
+}
+
+.resources-stats h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.resources-stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.resources-stats-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 120px;
+}
+
+.resources-stats-label {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.resources-stats-value {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.resources-stats-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.resources-stats-error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #d9534f;
 }
 
 .resources-upload-row {
@@ -58,7 +109,7 @@
   width: 100%;
 }
 
-/* Styling for Uploaded Files List*/
+/* Files / Docs list */
 .resources-list-container h4 {
   margin: 0 0 12px 0;
   font-size: 1.2rem;
@@ -127,7 +178,7 @@
   flex-shrink: 0;
 }
 
-/* Styling for create doc section */
+/* Create doc section */
 .create-doc-button {
   padding: 0.4rem 0.9rem;
   border-radius: 4px;
@@ -169,7 +220,7 @@
   flex-shrink: 0;
 }
 
-.create-doc-form button:disabled {
+create-doc-form button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

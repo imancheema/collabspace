@@ -8,22 +8,23 @@ type ResourcesProps = {
   groupCode?: string;
 };
 
-//Files returned from backend
-type ResourceObject = {
-  type: 'file';   //Object storage files
-  key: string;
-  name: string;
-  size: number;
-  lastModified: string;
-  url: string;
-} | {
-  type: 'doc';    //Collaborative text docs
-  key: string;
-  id: number;
-  name: string;
-  size: null;
-  lastModified: null;
-};;
+type ResourceObject =
+  | {
+      type: "file";
+      key: string;
+      name: string;
+      size: number;
+      lastModified: string;
+      url: string;
+    }
+  | {
+      type: "doc";
+      key: string;
+      id: number;
+      name: string;
+      size: null;
+      lastModified: null;
+    };
 
 const API_BASE = "http://localhost:5000";
 
@@ -32,20 +33,25 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
   const [status, setStatus] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  //States for list of files
   const [resourcesList, setResourcesList] = useState<ResourceObject[]>([]);
   const [groupId, setGroupId] = useState<number | null>(null);
   const [isLoadingList, setIsLoadingList] = useState<boolean>(true);
   const [listError, setListError] = useState<string>("");
 
-  //States for text doc creation
   const [showCreateDoc, setShowCreateDoc] = useState<boolean>(false);
   const [newDocName, setNewDocName] = useState<string>("");
   const [isCreatingDoc, setIsCreatingDoc] = useState<boolean>(false);
 
+  const [totalBytes, setTotalBytes] = useState<number | null>(null);
+  const [totalFiles, setTotalFiles] = useState<number | null>(null);
+  const [statsError, setStatsError] = useState<string>("");
+  const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
+
   const fetchResources = useCallback(async () => {
     if (!groupCode) {
       setIsLoadingList(false);
+      setResourcesList([]);
+      setGroupId(null);
       return;
     }
 
@@ -60,11 +66,12 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
       });
 
       if (!resp.ok) {
-        const err = await resp.json();
+        const err = await resp.json().catch(() => ({}));
         throw new Error(err.error || "Failed to fetch files.");
       }
 
-      const data: { groupId: number; resources: ResourceObject[] } = await resp.json();
+      const data: { groupId: number; resources: ResourceObject[] } =
+        await resp.json();
       setGroupId(data.groupId);
       setResourcesList(data.resources);
     } catch (err: any) {
@@ -75,10 +82,56 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     }
   }, [groupCode]);
 
-  //fetch list of resources on load
+  const fetchStats = useCallback(async () => {
+    if (!groupCode) {
+      setTotalBytes(null);
+      setTotalFiles(null);
+      setStatsError("");
+      return;
+    }
+
+    try {
+      setIsLoadingStats(true);
+      setStatsError("");
+
+      const resp = await fetch(`${API_BASE}/groups/${groupCode}/stats`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to load storage stats.");
+      }
+
+      const data = await resp.json();
+
+      if (data && data.ok) {
+        setTotalBytes(
+          typeof data.totalBytes === "number" ? data.totalBytes : 0
+        );
+        setTotalFiles(
+          typeof data.totalFiles === "number" ? data.totalFiles : 0
+        );
+      } else {
+        throw new Error("Failed to load storage stats.");
+      }
+    } catch (err: any) {
+      console.error("Stats fetch error:", err);
+      setStatsError(err.message || "Failed to load storage stats.");
+      setTotalBytes(null);
+      setTotalFiles(null);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  }, [groupCode]);
+
   useEffect(() => {
     fetchResources();
-  }, [fetchResources]);
+    fetchStats();
+  }, [fetchResources, fetchStats]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files?.[0] || null;
@@ -120,6 +173,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
       setFile(null);
 
       await fetchResources();
+      await fetchStats();
     } catch (err) {
       console.error(err);
       setStatus("An error occurred while uploading.");
@@ -128,7 +182,6 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     }
   };
 
-  //Create text doc for group
   const handleCreateDoc = async () => {
     if (!newDocName.trim()) {
       setStatus("Document name cannot be empty.");
@@ -156,12 +209,10 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
         throw new Error(err.error || "Failed to create document.");
       }
 
-      //Success
       setStatus("Document created successfully!");
       setNewDocName("");
       setShowCreateDoc(false);
-      await fetchResources(); //Refresh res list
-      
+      await fetchResources();
     } catch (err: any) {
       console.error(err);
       setStatus(err.message);
@@ -171,11 +222,11 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return "0 B";
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const sizes = ["B", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `(${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]})`;
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
   const renderResourceList = () => {
@@ -186,15 +237,14 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
       return <p className="resources-status-error">{listError}</p>;
     }
     if (resourcesList.length === 0) {
-      return <p>No files have been uploaded to this group yet!</p>;
+      return <p>No files or docs have been added to this group yet.</p>;
     }
 
     return (
       <ul className="resources-file-list">
         {resourcesList.map((res) => (
           <li key={res.key} className="file-list-item">
-            {res.type === 'file' ? (
-              //Object storage file
+            {res.type === "file" ? (
               <a
                 href={res.url}
                 target="_blank"
@@ -205,9 +255,8 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
                 <FaFileAlt className="file-icon" /> {res.name}
               </a>
             ) : (
-              //Collaborative text edit doc
               <Link
-                to={`/group/${groupId}/text-editor/${res.id}`}  //Links to text-editor page
+                to={`/group/${groupId}/text-editor/${res.id}`}
                 className="file-list-link"
                 title={res.name}
               >
@@ -215,11 +264,46 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
               </Link>
             )}
             <span className="file-list-size">
-              {res.type === 'file' ? formatFileSize(res.size) : ""}
+              {res.type === "file" ? `(${formatFileSize(res.size)})` : ""}
             </span>
           </li>
         ))}
       </ul>
+    );
+  };
+
+  const renderStats = () => {
+    if (!groupCode) {
+      return (
+        <p className="resources-stats-hint">
+          Select a course space to see storage usage.
+        </p>
+      );
+    }
+
+    if (statsError) {
+      return <p className="resources-stats-error">{statsError}</p>;
+    }
+
+    if (isLoadingStats && totalBytes === null && totalFiles === null) {
+      return <p className="resources-stats-hint">Loading storage stats...</p>;
+    }
+
+    return (
+      <div className="resources-stats-grid">
+        <div className="resources-stats-item">
+          <span className="resources-stats-label">Total files</span>
+          <span className="resources-stats-value">
+            {totalFiles !== null ? totalFiles : "-"}
+          </span>
+        </div>
+        <div className="resources-stats-item">
+          <span className="resources-stats-label">Total size</span>
+          <span className="resources-stats-value">
+            {totalBytes !== null ? formatFileSize(totalBytes) : "-"}
+          </span>
+        </div>
+      </div>
     );
   };
 
@@ -230,6 +314,11 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
         {groupCode && (
           <p className="resources-group-label">For group: {groupCode}</p>
         )}
+      </div>
+
+      <div className="resources-stats">
+        <h4>Storage Usage</h4>
+        {renderStats()}
       </div>
 
       <div className="resources-upload-row">
@@ -291,7 +380,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
       {status && <p className="resources-status">{status}</p>}
 
       <div className="resources-list-container">
-        <h4>Uploaded Files</h4>
+        <h4>Files & Documents</h4>
         {renderResourceList()}
       </div>
     </div>

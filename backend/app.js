@@ -675,6 +675,82 @@ app.post("/files/upload", auth, upload.single("file"), async (req, res) => {
   }
 });
 
+app.get("/stats", auth, async (req, res) => {
+  try {
+    const listCmd = new ListObjectsV2Command({
+      Bucket: process.env.SPACES_BUCKET || "collabspace",
+    });
+
+    const { Contents } = await s3.send(listCmd);
+
+    let totalFiles = 0;
+    let totalBytes = 0;
+
+    if (Contents && Contents.length > 0) {
+      Contents.forEach((obj) => {
+        if (!obj.Key.endsWith("/")) {
+          totalFiles += 1;
+          totalBytes += obj.Size || 0;
+        }
+      });
+    }
+
+    return res.json({
+      ok: true,
+      totalFiles,
+      totalBytes,
+    });
+  } catch (err) {
+    console.error("Stats error:", err);
+    return res.status(500).json({ ok: false, error: "Failed to load stats" });
+  }
+});
+
+app.get("/groups/:groupCode/stats", auth, async (req, res) => {
+  const { groupCode } = req.params;
+  const userId = req.user.sub;
+
+  try {
+    const group = await checkGroupMembership(userId, groupCode);
+    if (!group) {
+      return res
+        .status(403)
+        .json({ ok: false, error: "User not authorized for this group" });
+    }
+
+    const listCmd = new ListObjectsV2Command({
+      Bucket: process.env.SPACES_BUCKET || "collabspace",
+      Prefix: `${groupCode}/`,
+    });
+
+    const { Contents } = await s3.send(listCmd);
+
+    let totalFiles = 0;
+    let totalBytes = 0;
+
+    if (Contents && Contents.length > 0) {
+      Contents.forEach((obj) => {
+        if (!obj.Key.endsWith("/")) {
+          totalFiles += 1;
+          totalBytes += obj.Size || 0;
+        }
+      });
+    }
+
+    return res.json({
+      ok: true,
+      totalFiles,
+      totalBytes,
+    });
+  } catch (err) {
+    console.error("Group stats error:", err);
+    return res
+      .status(500)
+      .json({ ok: false, error: "Failed to load group stats" });
+  }
+});
+
+
 //Returns all resources associated with group
 //Object storage + Yjs text docs
 app.get("/groups/:groupCode/resources", auth, async (req, res) => {
