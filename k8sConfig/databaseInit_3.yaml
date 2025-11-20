@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init-sql
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS users (
+      ID SERIAL PRIMARY KEY,
+      NAME VARCHAR(255) NOT NULL,
+      EMAIL VARCHAR(255) UNIQUE NOT NULL,
+      PASSWORD_HASH VARCHAR(255) NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS STUDY_GROUPS (
+        ID SERIAL PRIMARY KEY,
+        NAME VARCHAR(255) NOT NULL,
+        DESCRIPTION TEXT,
+        CODE VARCHAR(10) UNIQUE NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS USER_GROUPS (    --Ties users to study groups
+        USER_ID INT REFERENCES USERS(ID),
+        GROUP_ID INT REFERENCES STUDY_GROUPS(ID),
+        ROLE VARCHAR(20) DEFAULT 'member',
+        PRIMARY KEY (USER_ID, GROUP_ID)
+    );
+
+    CREATE TABLE IF NOT EXISTS TEXT_DOCS (      --Persists text documents
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,                                           -- Document name
+      group_id INT NOT NULL REFERENCES STUDY_GROUPS(ID) ON DELETE CASCADE,  -- Document is tied to study group foreign key
+      data BYTEA,                                                           -- Stores Yjs document as binary
+      UNIQUE(group_id, name)
+    );
+
+    CREATE TABLE IF NOT EXISTS ANNOUNCEMENTS (  --Persists announcements
+        ID SERIAL PRIMARY KEY,
+        TASK TEXT NOT NULL,
+        GROUP_ID INT NOT NULL REFERENCES STUDY_GROUPS(ID) ON DELETE CASCADE,    --Tied to study group, foreign key
+        USER_ID INT REFERENCES USERS(ID) ON DELETE SET NULL,
+        CREATED_AT TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
