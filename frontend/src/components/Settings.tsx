@@ -12,7 +12,7 @@ type SettingsProps = {
   groupCode?: string;
 };
 
-const API_BASE = "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
   const [members, setMembers] = useState<Member[]>([]);
@@ -35,7 +35,7 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
 
     const fetchMembers = async () => {
       try {
-        const res = await fetch(`${API_BASE}/groups/${groupCode}/members`, {
+        const res = await fetch(`${API_URL}/groups/${groupCode}/members`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
           },
@@ -63,7 +63,7 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
     if (!window.confirm("Are you sure you want to leave this group?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/groups/${groupCode}/leave`, {
+      const res = await fetch(`${API_URL}/groups/${groupCode}/leave`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
@@ -88,7 +88,7 @@ const Settings: React.FC<SettingsProps> = ({ groupCode }) => {
       return;
 
     try {
-      const res = await fetch(`${API_BASE}/groups/${groupCode}`, {
+      const res = await fetch(`${API_URL}/groups/${groupCode}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,

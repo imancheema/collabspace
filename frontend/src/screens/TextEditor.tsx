@@ -23,7 +23,7 @@ import { PiListBulletsBold, PiListNumbersBold } from 'react-icons/pi';
 import './TextEditor.css';
 
 //Hocuspocus Websocket Port
-const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
+const COLLAB_URL = process.env.REACT_APP_COLLAB_SOCKET || "ws://localhost:6001";
 
 //User Details
 type User = {
@@ -31,7 +31,7 @@ type User = {
   email?: string;
 };
 
-const userColors = ['#EE7962FF', '#F29F05', '#F2CB05', '#8C41F0', '#04BF8A', '#05A6F2', '#F24172', '#3D4A59', '#4E61F2', '#005A31'];
+const userColors = ['#EE7962FF', '#F29F05', '#F2CB05', '#8C41F0', '#04BF8A', '#05A6F2', '#F24172'];
 // const userNames = ['Albedo', 'Venti', 'Alice', 'Durin', 'Mona'];
 
 //Custom Extension for Tab Input
@@ -210,7 +210,7 @@ export const TextEditor: React.FC = () => {
 
     //Initialize HocuspocusProvider
     const provider = new HocuspocusProvider({
-      url: 'ws://localhost:' + COLLAB_PORT, //server url
+      url: COLLAB_URL,      //server url
       name: documentId,     //room name and name of doc
       document: doc,
     });

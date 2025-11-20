@@ -10,6 +10,8 @@ interface JoinGroupPopupProps {
   }) => void;
 }
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
   onClose,
   onGroupJoined,
@@ -26,7 +28,7 @@ const JoinGroupPopup: React.FC<JoinGroupPopupProps> = ({
     }
 
     try {
-      const res = await fetch("http://localhost:5000/groups/join", {
+      const res = await fetch(`${API_URL}/groups/join`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
