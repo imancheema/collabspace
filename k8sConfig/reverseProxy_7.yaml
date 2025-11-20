@@ -13,9 +13,6 @@ metadata:
     #increased timeout for websocket
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
-    nginx.ingress.kubernetes.io/proxy-set-header-Upgrade: "$http_upgrade"
-    nginx.ingress.kubernetes.io/proxy-set-header-Connection: "Upgrade"
 
 spec:
   rules:
@@ -24,7 +21,7 @@ spec:
           #hocuspocus route
           #ws://ip/collab
           - path: /collab($|/)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: api-service
@@ -34,7 +31,7 @@ spec:
           #express route
           #http://ip/api
           - path: /api($|/)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: api-service
@@ -43,7 +40,7 @@ spec:
 
           #frontend route
           - path: /()(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend-service

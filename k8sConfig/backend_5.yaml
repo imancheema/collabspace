@@ -14,18 +14,18 @@ spec:
     spec:
       containers:
         - name: api
-          image: registry.digitalocean.com/collab-registry/backend:v1
+          image: ghcr.io/imancheema/collabspace-backend:sha-dd5057a
           ports:
             - containerPort: 5000 #Express
             - containerPort: 6001 #Hocuspocus
           env:
-            - name: DATABASE_URL
-              value: "postgres://postgres:$(POSTGRES_PASSWORD)@db:5432/collabspace"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: postgres-password
+            - name: DATABASE_URL
+              value: "postgres://postgres:$(POSTGRES_PASSWORD)@db:5432/collabspace"
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -56,16 +56,21 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: spaces-region
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: frontend-url
             - name: COLLAB_PORT
               valueFrom:
                 configMapKeyRef:
-                name: app-config
-                key: collab-port
+                  name: app-config
+                  key: collab-port
             - name: EXPRESS_PORT
               valueFrom:
                 configMapKeyRef:
-                name: app-config
-                key: express-port
+                  name: app-config
+                  key: express-port
 ---
 apiVersion: v1
 kind: Service

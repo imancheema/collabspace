@@ -14,10 +14,12 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: registry.digitalocean.com/collab-registry/frontend:v1
+          image: ghcr.io/imancheema/collabspace-frontend:sha-dd5057a
           ports:
             - containerPort: 3000
           env:
+            - name: HOST
+              value: "0.0.0.0"
             #Backend url
             - name: REACT_APP_API_URL 
               valueFrom: 
