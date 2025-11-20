@@ -3,5 +3,6 @@ WORKDIR /app
 COPY backend/package*.json ./
 RUN npm install
 COPY backend/ ./
-EXPOSE 5000
+#Express, Hocuspocus port
+EXPOSE 5000 6001
 CMD ["node", "app.js"]
