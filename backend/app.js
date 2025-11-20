@@ -553,7 +553,7 @@ app.get("/", async (req, res) => {
 //------------------------------------------
 // Text Editor Collaboration WebSocket
 //------------------------------------------
-const COLLAB_PORT = process.env.COLLAB_PORT;
+const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
 
 const hocuspocusServer = new Server({
   name: "collabspace-server",
@@ -850,5 +850,5 @@ app.get("/groups/:groupCode/resources", auth, async (req, res) => {
 hocuspocusServer.listen();
 console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);
 
-const PORT = process.env.PORT;
+const PORT = process.env.EXPRESS_PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
