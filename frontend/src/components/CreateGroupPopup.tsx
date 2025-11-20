@@ -10,6 +10,8 @@ interface CreateGroupPopupProps {
   }) => void;
 }
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({
   onClose,
   onGroupCreated,
@@ -34,7 +36,7 @@ const CreateGroupPopup: React.FC<CreateGroupPopupProps> = ({
     }
 
     try {
-      const response = await fetch("http://localhost:5000/groups/create", {
+      const response = await fetch(`${API_URL}/groups/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

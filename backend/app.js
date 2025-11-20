@@ -18,7 +18,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -34,7 +34,7 @@ function auth(req, res, next) {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "dev-secret-change-me"
+      process.env.JWT_SECRET
     );
     req.user = decoded;
     next();
@@ -46,8 +46,7 @@ function auth(req, res, next) {
 // db connection
 const pool = new Pool({
   connectionString:
-    process.env.DATABASE_URL ||
-    "postgres://postgres:postgres@db:5432/collabspace",
+    process.env.DATABASE_URL,
 });
 
 app.post("/auth/register", async (req, res) => {
@@ -88,7 +87,7 @@ app.post("/auth/register", async (req, res) => {
 
     const token = jwt.sign(
       { sub: user.id, email: user.email },
-      process.env.JWT_SECRET || "dev-secret-change-me",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -153,7 +152,7 @@ app.post("/auth/login", async (req, res) => {
 
     const token = jwt.sign(
       { sub: user.id, email: user.email },
-      process.env.JWT_SECRET || "dev-secret-change-me",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -612,7 +611,7 @@ const upload = multer({
 });
 
 const s3 = new S3Client({
-  region: "tor1",
+  region: process.env.SPACES_REGION || "tor1",
   endpoint:
     process.env.SPACES_ENDPOINT || "https://tor1.digitaloceanspaces.com",
   forcePathStyle: false,
@@ -851,5 +850,5 @@ app.get("/groups/:groupCode/resources", auth, async (req, res) => {
 hocuspocusServer.listen();
 console.log(`Hocuspocus collaboration server running on port ${COLLAB_PORT}`);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.EXPRESS_PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

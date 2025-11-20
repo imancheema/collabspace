@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  #Config for DB and object storage
+  postgres-db: "collabspace"
+  postgres-user: "postgres"
+  spaces-endpoint: "https://tor1.digitaloceanspaces.com"
+  spaces-bucket: "collabspace"
+  spaces-region: "tor1"
+  collab-port: "6001"
+  express-port: "5000"
+  
+  #Config for frontend
+  react-app-api-url: "http://<INGRESS_IP>/api"
+  react-app-collab-socket: "ws://<INGRESS_IP>/collab"
+  frontend-url: "http://<INGRESS_IP>"

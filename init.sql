@@ -35,10 +35,10 @@ CREATE TABLE IF NOT EXISTS ANNOUNCEMENTS (  --Persists announcements
     CREATED_AT TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (NAME, EMAIL, PASSWORD_HASH)
-VALUES (
-    'Demo User',
-    'demo@example.com',
-    '$2b$10$o9Lrf5yyR.oDfvvT8Ds49e4RV7m6Udera1Hl9bSDMaKji7ms2N2JW'
-)
-ON CONFLICT (email) DO NOTHING;
+-- INSERT INTO users (NAME, EMAIL, PASSWORD_HASH)
+-- VALUES (
+--     'Demo User',
+--     'demo@example.com',
+--     '$2b$10$o9Lrf5yyR.oDfvvT8Ds49e4RV7m6Udera1Hl9bSDMaKji7ms2N2JW'
+-- )
+-- ON CONFLICT (email) DO NOTHING;

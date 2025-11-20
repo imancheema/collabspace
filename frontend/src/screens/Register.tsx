@@ -16,7 +16,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister }) => {
   const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const API_BASE = "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,7 +40,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister }) => {
     try {
       setIsSubmitting(true);
 
-      const resp = await fetch(`${API_BASE}/auth/register`, {
+      const resp = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),

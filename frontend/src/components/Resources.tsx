@@ -26,7 +26,7 @@ type ResourceObject =
       lastModified: null;
     };
 
-const API_BASE = "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
   const [file, setFile] = useState<File | null>(null);
@@ -58,7 +58,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     setIsLoadingList(true);
     setListError("");
     try {
-      const resp = await fetch(`${API_BASE}/groups/${groupCode}/resources`, {
+      const resp = await fetch(`${API_URL}/groups/${groupCode}/resources`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
@@ -94,7 +94,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
       setIsLoadingStats(true);
       setStatsError("");
 
-      const resp = await fetch(`${API_BASE}/groups/${groupCode}/stats`, {
+      const resp = await fetch(`${API_URL}/groups/${groupCode}/stats`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
@@ -155,7 +155,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
         formData.append("groupCode", groupCode);
       }
 
-      const resp = await fetch(`${API_BASE}/files/upload`, {
+      const resp = await fetch(`${API_URL}/files/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
@@ -195,7 +195,7 @@ const Resources: React.FC<ResourcesProps> = ({ groupCode }) => {
     setIsCreatingDoc(true);
     setStatus("");
     try {
-      const resp = await fetch(`${API_BASE}/groups/${groupId}/textdocs`, {
+      const resp = await fetch(`${API_URL}/groups/${groupId}/textdocs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

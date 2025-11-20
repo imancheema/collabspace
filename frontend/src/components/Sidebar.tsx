@@ -13,6 +13,8 @@ interface Group {
   code: string;
 }
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const Sidebar: React.FC<SidebarProps> = ({ onSelectGroup }) => {
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [showJoinPopup, setShowJoinPopup] = useState(false);
@@ -24,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectGroup }) => {
       if (!token) return;
 
       try {
-        const res = await fetch("http://localhost:5000/groups/my", {
+        const res = await fetch(`${API_URL}/groups/my`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
