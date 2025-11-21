@@ -46,3 +46,13 @@
   color: #555;
   margin: 0;
 }
+
+.enter-group-btn{
+   padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  border: none;
+  background-color: var(--secondary-color, #ffb703);
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+}
