@@ -7,12 +7,12 @@ data:
   postgres-db: "collabspace"
   postgres-user: "postgres"
   spaces-endpoint: "https://tor1.digitaloceanspaces.com"
-  spaces-bucket: "collabspace"
+  spaces-bucket: "collabspacebuckets"
   spaces-region: "tor1"
   collab-port: "6001"
   express-port: "5000"
-  frontend-url: "http://159.203.55.219" #for cors
+  frontend-url: "http://152.42.146.198" #for cors
   
   #Config for frontend
-  react-app-api-url: "http://159.203.55.219/api"
-  react-app-collab-socket: "ws://159.203.55.219/collab"
+  react-app-api-url: "http://152.42.146.198/api"
+  react-app-collab-socket: "ws://152.42.146.198/collab"
