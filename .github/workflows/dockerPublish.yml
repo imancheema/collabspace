@@ -1,4 +1,4 @@
-name: Docker Build and Push
+name: Docker Build, Push and Deploy
 
 #Triggered on push to main, PR, manual
 on:
@@ -12,6 +12,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  CLUSTER_NAME: k8s-1-34-1-do-0-tor1-1764625606646
 
 jobs:
   build-and-push:
@@ -29,9 +30,13 @@ jobs:
           - service: backend
             dockerfile: ./Docker/Backend.Dockerfile
             image_suffix: -backend
+            deployment_name: api
+            container_name: api
           - service: frontend
             dockerfile: ./Docker/Frontend.Dockerfile
             image_suffix: -frontend
+            deployment_name: frontend
+            container_name: frontend
 
     steps:
       - name: Checkout repository
@@ -54,7 +59,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}
           tags: |
             type=ref, event=pr
-            type=sha, enable={{is_default_branch}}
+            type=sha, format=long, enable={{is_default_branch}}
             type=raw, value=latest, enable={{is_default_branch}}
 
       #Build + push image (pr images not pushed)
@@ -66,3 +71,26 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      #Deploy to DOKS on push to main
+      - name: Install doctl
+        if: github.event_name != 'pull_request'
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_ACCESS_TOKEN }}
+
+      - name: Save DigitalOcean Kubeconfig
+        if: github.event_name != 'pull_request'
+        run: doctl kubernetes cluster kubeconfig save ${{ env.CLUSTER_NAME }}
+
+      - name: Update Kubernetes Deployment
+        if: github.event_name != 'pull_request'
+        run: |
+          #Create full image name
+          NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}:sha-${{ github.sha }}"
+          
+          #Set new image
+          kubectl set image deployment/${{ matrix.deployment_name }} ${{ matrix.container_name }}=$NEW_IMAGE
+          
+          #Wait for rollout to complete
+          kubectl rollout status deployment/${{ matrix.deployment_name }}
