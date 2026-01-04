@@ -174,6 +174,7 @@ export const TextEditor: React.FC = () => {
     provider: HocuspocusProvider;
   } | null>(null);
 
+  const [connectionStatus, setConnectionStatus] = useState<string>('connecting');
   const [userName, setUserName] = useState<string>("");
 
   //Grab username
@@ -204,7 +205,10 @@ export const TextEditor: React.FC = () => {
   //useEffect runs once on mount to create provider
   useEffect(() => {
     //Will not init if doc id missing
-    if (!documentId) return;
+    if (!documentId) {
+      setConnectionStatus("error");
+      return;
+    }
 
     const doc = new Y.Doc();
 
@@ -213,7 +217,21 @@ export const TextEditor: React.FC = () => {
       url: COLLAB_URL,      //server url
       name: documentId,     //room name and name of doc
       document: doc,
+      token: localStorage.getItem("token") || "", //passed for ws auth
     });
+
+    provider.on('stateless', ({ payload }: { payload: string }) => {
+  // If the server throws an error in onAuthenticate or fetch,
+  // the provider usually closes the connection.
+  if (payload === 'Unauthorized') {
+    setConnectionStatus('unauthorized');
+  }
+});
+
+// Also use the status event for a cleaner UI
+provider.on('status', ({ status }: { status: string }) => {
+  if (status === 'connected') setConnectionStatus('connected');
+});
 
     //WebSocket logging  
     console.log("Hocuspocus Provider Initialized");
@@ -267,6 +285,18 @@ export const TextEditor: React.FC = () => {
         ] : []),
     ],
   }, [editorData, userCaret]);
+
+  if (connectionStatus === 'connecting') {
+    return <div>Connecting to document...</div>;
+  }
+
+  if (connectionStatus === 'unauthorized') {
+    return <div>Access Denied: You are not a member of this group.</div>;
+  }
+  
+  if (connectionStatus === 'error') {
+    return <div>Error: Could not load document.</div>;
+  }
 
   //loading state when editor or editorData not ready
   if (!editor || !editorData) {
