@@ -558,16 +558,59 @@ const COLLAB_PORT = process.env.COLLAB_PORT || 6001;
 const hocuspocusServer = new Server({
   name: "collabspace-server",
   port: COLLAB_PORT,
+  //Authenticate users
+  async onAuthenticate({ token }) {
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    try {
+      //Verify JWT from the frontend
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET
+      );
+
+      //Whatever you return here becomes available in 'connection.user'
+      return {
+        user: decoded,
+      };
+    } catch (err) {
+      throw new Error("Invalid token");
+    }
+  },
   extensions: [
     new Database({
       //Fetch and return doc when user joins
-      fetch: async ({ documentName }) => {
+      fetch: async ({ documentName, context }) => {
         const docId = parseInt(documentName, 10);
-        if (isNaN(docId)) {
-          return null;
-        }
+        const userId = context.user?.sub;
+        
+        if (!userId) throw new Error("Unauthorized");
+
+        
 
         try {
+          //Check if document exists and get its group
+          const docRes = await pool.query(
+            "SELECT group_id FROM TEXT_DOCS WHERE id = $1",
+            [docId]
+          );
+
+          if (docRes.rows.length === 0) return null;
+          const groupId = docRes.rows[0].group_id;
+
+          //Check if user is member of group
+          const memberRes = await pool.query(
+            "SELECT 1 FROM USER_GROUPS WHERE user_id = $1 AND group_id = $2",
+            [userId, groupId]
+          );
+
+          if (memberRes.rows.length === 0) {
+            //Throw error, trigger frontend
+            throw new Error("Unauthorized");
+          }
+
           const { rows } = await pool.query(
             "SELECT data FROM TEXT_DOCS WHERE id = $1",
             [docId]
