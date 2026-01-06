@@ -208,9 +208,12 @@ export const TextEditor: React.FC = () => {
 
     const doc = new Y.Doc();
 
+    //Determine protocol for WebSocket
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+
     //Initialize HocuspocusProvider
     const provider = new HocuspocusProvider({
-      url: COLLAB_URL,      //server url
+      url: `${protocol}://${window.location.host}${COLLAB_URL}`,      //server url
       name: documentId,     //room name and name of doc
       document: doc,
     });
