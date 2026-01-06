@@ -11,8 +11,8 @@ data:
   spaces-region: "tor1"
   collab-port: "6001"
   express-port: "5000"
-  frontend-url: "http://152.42.146.198" #for cors
+  frontend-url: "http://152.42.146.198,https://collabspace.harishuma.com" #for express cors
   
   #Config for frontend
-  react-app-api-url: "http://152.42.146.198/api"
-  react-app-collab-socket: "ws://152.42.146.198/collab"
+  react-app-api-url: "/api"
+  react-app-collab-socket: "/collab"
