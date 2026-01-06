@@ -19,7 +19,7 @@
 
 | Collaborative Editor | Course Resources |
 | :---: | :---: |
-| ![Text Editor](docAssets/image6.png) <br> *Real-time collaboration* | ![Resources](docAssets/image8.png) <br> *File storage and tracking* |
+| ![Text Editor](docAssets/image12.png) <br> *Real-time collaboration* | ![Resources](docAssets/image8.png) <br> *File storage and tracking* |
 
 
 ## Technical Stack
