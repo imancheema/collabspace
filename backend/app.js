@@ -16,9 +16,22 @@ const multer = require("multer");
 
 const app = express();
 
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3000").split(',');
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: function (origin, callback) {
+      //Allows requests with no origin
+      if (!origin) return callback(null, true);
+
+      //Check against origins list
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.error(`CORS blocked for origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
